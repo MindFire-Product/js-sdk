@@ -72,7 +72,7 @@
       };
       return await callApi(url, options);
     }
-    
+
     /**
      * Use app_code, event_code, event_path, event_element to define how'd you like to track the interactions of your landing page visitors.
      * @typedef {Object} EventParams
@@ -105,7 +105,7 @@
      *   }
      * });
      */
-    
+
     record.addEvent = async function (eventParams) {
       eventParams.shardKey = eventParams.shardKey || shardKey; // Add shardKey if not provided;
       const url = `${edgeServiceURI}/api/contact-service/v1/events/${record.data._id}`;
@@ -119,21 +119,21 @@
       return await callApi(url, options);
     };
 
-    // Helper function to add a new record created by the authenticated record
-    // Adding a new record is only possible when a previously authenticated record adds an event with a special event code of 99999.
-    // The newly created record will have two special properties:
-    // referredBy: The _id of the authenticated record that added the event.
-    // referredPurl: The _id of the authenticated record that added the event.
+    /**
+     * @typedef {Object} NewRecordParams
+     * @property {String} event_path - The path of the event.
+     * @property {String} event_element - The element of the event.
+     * @property {String} event_date - The date of the event, defaults to the current date if not provided.
+     * @property {Boolean} no_duplicate - Whether to prevent duplicate records, defaults to false.
+     * @property {Object} event_data - Custom data used to create the new record.
+     */
 
     /**
-     * Adds a new record created by the authenticated record.
+     * Adds a new record created by the authenticated record. 
      * The newly created record will have two special properties: 
      * referredBy: The _id of the authenticated record that added the new record.
-     * referredPurl: The PURL of the authenticated record that added the new record.
-     * 
-     * @param {String} event_path - The path of the event.
-     * @param {String} event_element - The element of the event.
-     * @param {Boolean} no_duplicate - Whether to prevent duplicate records.
+     * referredPurl: The PURL of the authenticated record that added the new record
+     * @param {NewRecordParams} params - The parameters for the new record.
      * @returns {Promise} - The response from the API.
      * 
      * @example
@@ -141,19 +141,26 @@
      *   event_path: "Direct Mail",
      *   event_element: "New Year Promo",
      *   no_duplicate: true,
+     *   event_data: {  // this fields will be used to create the new record.
+     *     firstname: "John",
+     *     lastname: "Doe",
+     *     email: "john.doe@example.com",
+     *     phone: "1234567890", 
      * });
      */
 
-    record.addNewRecord = async function (event_path, event_element, no_duplicate = false) {
+    record.addNewRecord = async function (newRecodParams) {
       return await record.addEvent({
         app_code: "900",
         event_code: "99999", // This is the special event code that will create a new record. 
-        event_path: event_path,
-        event_element: event_element,
-        event_date: new Date().toISOString(),
-        no_duplicate: no_duplicate, // defaults to false, if set to true, the new record will not be added if it already exists.
+        event_path: newRecodParams.event_path,
+        event_element: newRecodParams.event_element,
+        event_date: newRecodParams.event_date || new Date().toISOString(),
+        no_duplicate: newRecodParams.no_duplicate, // defaults to false, if set to true, the new record will not be added if it already exists.
+        event_data: newRecodParams.event_data,
       });
     };
+
     return record;
   };
 
