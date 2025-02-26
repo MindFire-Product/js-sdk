@@ -124,8 +124,7 @@
      * @property {String} event_path - The path of the event.
      * @property {String} event_element - The element of the event.
      * @property {String} event_date - The date of the event, defaults to the current date if not provided.
-     * @property {Boolean} no_duplicate - Whether to prevent duplicate records, defaults to false.
-     * @property {Object} event_data - Custom data used to create the new record.
+     * @property {Object} event_data - Custom data used to create the new record. Must include the PURL generation and deduplication fields.
      */
 
     /**
@@ -139,13 +138,13 @@
      * @example
      * record.addNewRecord({
      *   event_path: "Direct Mail",
-     *   event_element: "New Year Promo",
-     *   no_duplicate: true,
+     *   event_element: "New Year Promo",  
      *   event_data: {  // this fields will be used to create the new record.
-     *     firstname: "John",
-     *     lastname: "Doe",
-     *     email: "john.doe@example.com",
-     *     phone: "1234567890", 
+     *     firstname: "John", // purl generation field (required)
+     *     lastname: "Doe", // purl generation field (required)
+     *     email: "john.doe@example.com", // deduplication field (required)
+     *     phone: "1234567890", // optional fields to add to the new record.
+     *     no_duplicate: true, // prevents duplicate records from being created.
      * });
      */
 
@@ -156,7 +155,6 @@
         event_path: newRecodParams.event_path,
         event_element: newRecodParams.event_element,
         event_date: newRecodParams.event_date || new Date().toISOString(),
-        no_duplicate: newRecodParams.no_duplicate, // defaults to false, if set to true, the new record will not be added if it already exists.
         event_data: newRecodParams.event_data,
       });
     };
