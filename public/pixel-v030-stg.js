@@ -157,14 +157,14 @@
      *     no_duplicate: true, // prevents duplicate records from being created.
      * });
      */
-    record.addNewRecord = async function (newRecodParams) {
+    record.addNewRecord = async function (newRecordParams) {
       return await record.addEvent({
         app_code: "900",
         event_code: "99999", // This is the special event code that will create a new record. 
-        event_path: newRecodParams.event_path,
-        event_element: newRecodParams.event_element,
-        event_date: newRecodParams.event_date || new Date().toISOString(),
-        event_data: newRecodParams.event_data,
+        event_path: newRecordParams.event_path,
+        event_element: newRecordParams.event_element,
+        event_date: newRecordParams.event_date || new Date().toISOString(),
+        event_data: newRecordParams.event_data,
       });
     };
 
