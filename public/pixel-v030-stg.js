@@ -1,6 +1,6 @@
 (function (_MFS, _mfaid, _mfpurl, _mfaccessid) {
   const identityServiceURI = "https://services-stg.mdl.io";
-  const edgeServiceURI = "https://services-stg.mdl.io ";
+  const edgeServiceURI = "https://services-stg.mdl.io";
 
   /**
    * Helper function that wraps the native fetch to make a JSON request and return the resolved data object from response.
