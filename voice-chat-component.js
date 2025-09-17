@@ -10,20 +10,22 @@ import {
  * @extends HTMLElement
  *
  * @example
- * // Basic usage with JSON data
- * <voice-chat-component
- *   data-agent-id="your-agent-id"
- *   data-visitor-info='{"name":"John Doe","email":"john@example.com"}'>
- * </voice-chat-component>
- *
- * @example
- * // Using property assignment (recommended for dynamic data)
- * const voiceComponent = document.querySelector('voice-chat-component');
- * voiceComponent.visitorInfo = {
- *   name: "John Doe",
- *   email: "john@example.com",
- *   phone: "1234567890"
- * };
+ * // 3 steps to use the component:
+ * // 1. Add the component to your HTML
+ * <voice-chat-component data-agent-id="your-agent-id"></voice-chat-component>
+ * 
+ * // 2. Load the script
+ * <script src="voice-chat-component.js" type="module"></script>
+ * 
+ * // 3. Optionally set visitor info
+ * <script>
+ *   const voiceComponent = document.querySelector('voice-chat-component');
+ *   voiceComponent.visitorInfo = {
+ *     name: "John Doe",
+ *     email: "john@example.com",
+ *     phone: "1234567890"
+ *   };
+ * </script>
  *
  * @example
  * // Listening to events from external JavaScript
@@ -65,19 +67,16 @@ class VoiceChatComponent extends HTMLElement {
     // Initialize component state
     this._initializeState();
 
+    // This handles the case where visitorInfo is set on the element
+    // before the component is fully defined and upgraded.
+    this._upgradeProperty("visitorInfo");
+
     // Bind methods to preserve context
     this._bindMethods();
 
     // Render initial UI
     this.render();
     this.setupEventListeners();
-
-    // Load agent configuration if provided
-    const agentId = this.getAttribute("data-agent-id");
-    if (agentId) {
-      this.agentId = agentId;
-      this.loadAgentConfiguration();
-    }
   }
 
   /**
@@ -94,8 +93,8 @@ class VoiceChatComponent extends HTMLElement {
     // Component configuration
     this.agentId = null;
     this.isConfigLoaded = false;
-    this.apiBaseUrl = "https://z-server-stg.uc.r.appspot.com/api";
-    //this.apiBaseUrl = "http://localhost:8000/api";
+    // this.apiBaseUrl = "https://z-server-stg.uc.r.appspot.com/api";
+    this.apiBaseUrl = "http://localhost:8000/api";
     this.apiVersion = "v1";
 
     // Component state
@@ -110,6 +109,20 @@ class VoiceChatComponent extends HTMLElement {
   }
 
   /**
+   * Ensures that properties set on the element before it was upgraded
+   * are applied to the class instance.
+   * @private
+   * @param {string} prop - The name of the property to upgrade.
+   */
+  _upgradeProperty(prop) {
+    if (this.hasOwnProperty(prop)) {
+      let value = this[prop];
+      delete this[prop];
+      this[prop] = value;
+    }
+  }
+
+  /**
    * Bind methods to preserve context
    * @private
    */
@@ -118,7 +131,6 @@ class VoiceChatComponent extends HTMLElement {
     this.stopConversation = this.stopConversation.bind(this);
     this.toggleMute = this.toggleMute.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
-    this.handleModalClick = this.handleModalClick.bind(this);
   }
 
   /**
@@ -140,15 +152,18 @@ class VoiceChatComponent extends HTMLElement {
   }
 
   connectedCallback() {
-    try {
-      // Load visitor info when connected (after scripts have run)
-      const visitorInfoAttr = this.getAttribute("data-visitor-info");
-      if (visitorInfoAttr) {
-        this.handleVisitorInfoAttribute(visitorInfoAttr);
-      }
-    } catch (error) {
-      console.error("Error in connectedCallback:", error);
-      this._handleError("Failed to initialize component", error);
+    // The component is now connected to the DOM.
+    // We read the agent ID from the attribute one time and load its configuration.
+    const agentId = this.getAttribute("data-agent-id");
+    if (agentId && typeof agentId === "string") {
+      this.agentId = agentId.trim();
+      this.loadAgentConfiguration();
+    } else {
+      console.error(
+        "VoiceChatComponent Error: `data-agent-id` attribute is missing or invalid."
+      );
+      // Hide the component if no valid agent ID is provided
+      this.hideComponent();
     }
   }
 
@@ -209,52 +224,6 @@ class VoiceChatComponent extends HTMLElement {
     this.updateConnectionStatus(false);
   }
 
-  static get observedAttributes() {
-    return ["data-agent-id", "data-visitor-info"];
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue === newValue || this.isDestroyed) return;
-
-    try {
-      switch (name) {
-        case "data-agent-id":
-          this._handleAgentIdChange(newValue);
-          break;
-        case "data-visitor-info":
-          this._handleVisitorInfoChange(newValue);
-          break;
-      }
-    } catch (error) {
-      console.error(`Error handling attribute change for ${name}:`, error);
-      this._handleError(`Failed to update ${name}`, error);
-    }
-  }
-
-  /**
-   * Handle agent ID changes with validation
-   * @private
-   * @param {string} newValue - New agent ID value
-   */
-  _handleAgentIdChange(newValue) {
-    if (!newValue || typeof newValue !== "string") {
-      console.warn("Invalid agent ID provided");
-      return;
-    }
-
-    this.agentId = newValue.trim();
-    this.loadAgentConfiguration();
-  }
-
-  /**
-   * Handle visitor info changes with validation
-   * @private
-   * @param {string} newValue - New visitor info value
-   */
-  _handleVisitorInfoChange(newValue) {
-    this.visitorInfo = this._parseVisitorInfo(newValue);
-  }
-
   /**
    * Get visitor information
    * @returns {Object} Current visitor information
@@ -265,37 +234,21 @@ class VoiceChatComponent extends HTMLElement {
 
   /**
    * Set visitor information
-   * @param {Object|string} value - Visitor information object or JSON string
+   * @param {Object} value - Visitor information object. Must be a non-null object.
    */
   set visitorInfo(value) {
-    this._visitorInfo = this._parseVisitorInfo(value);
-  }
-
-  /**
-   * Parse visitor info from various formats
-   * @private
-   * @param {string|Object} value - Visitor info value
-   * @returns {Object} Parsed visitor info
-   */
-  _parseVisitorInfo(value) {
-    if (!value) return {};
-
-    // If it's already an object, return it directly
-    if (typeof value === "object" && value !== null) {
-      return value;
-    }
-
-    // If it's not a string, return empty object
-    if (typeof value !== "string") {
-      return {};
-    }
-
-    try {
-      // Try to parse as JSON - let JSON.parse handle validation
-      return JSON.parse(value);
-    } catch (error) {
-      console.warn("Invalid visitor-info JSON:", error);
-      return {};
+    // Validate that the incoming value is a non-null object
+    if (value && typeof value === "object" && value !== null) {
+      this._visitorInfo = value;
+    } else {
+      // If the value is invalid but not null/undefined, warn the developer
+      if (value) {
+        console.warn(
+          `Failed to set visitorInfo: value must be an object. Received type: ${typeof value}`
+        );
+      }
+      // Reset to a default empty object
+      this._visitorInfo = {};
     }
   }
 
@@ -391,14 +344,7 @@ class VoiceChatComponent extends HTMLElement {
     this.hideComponent();
   }
 
-  handleVisitorInfoAttribute(visitorInfoAttr) {
-    this.visitorInfo = visitorInfoAttr;
-  }
 
-  showLoadingState() {
-    // Loading state is now handled in render() method
-    // This method is kept for compatibility but does nothing
-  }
 
   hideComponent() {
     // Hide the entire component when agent is not active
@@ -706,9 +652,16 @@ class VoiceChatComponent extends HTMLElement {
                   /* Control Buttons */
                   .controls {
                       display: flex;
-                      gap: 16px;
+                      gap: 24px;
                       justify-content: center;
                       margin-top: 32px;
+                  }
+
+                  .control-item {
+                      display: flex;
+                      flex-direction: column;
+                      align-items: center;
+                      gap: 8px;
                   }
                   
                   .control-btn {
@@ -724,6 +677,10 @@ class VoiceChatComponent extends HTMLElement {
                       transition: all 0.2s ease;
                       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                   }
+
+                  .control-btn:hover {
+                      transform: translateY(-1px);
+                  }
                   
                   .mute-btn {
                       background: #6b7280;
@@ -732,7 +689,6 @@ class VoiceChatComponent extends HTMLElement {
                   
                   .mute-btn:hover {
                       background: #4b5563;
-                      transform: translateY(-1px);
                   }
                   
                   .mute-btn.muted {
@@ -746,7 +702,13 @@ class VoiceChatComponent extends HTMLElement {
                   
                   .stop-btn:hover {
                       background: #b91c1c;
-                      transform: translateY(-1px);
+                  }
+
+                  .control-label {
+                      font-size: 12px;
+                      font-weight: 500;
+                      color: var(--secondary-text-color);
+                      font-family: var(--font-family);
                   }
                   
                   /* Permission State */
@@ -927,7 +889,7 @@ class VoiceChatComponent extends HTMLElement {
                       ? `<img class="avatar" src="${this.agentConfig.avatar_url}" alt="Agent Avatar" loading="lazy">`
                       : ""
                   }
-                  <span>${buttonText}</span>
+                  <span style="font-weight: bold;">${buttonText}</span>
               </button>
   
               <!-- Modal Overlay -->
@@ -987,31 +949,37 @@ class VoiceChatComponent extends HTMLElement {
   
                       <!-- Control Buttons -->
                       <div class="controls" role="toolbar" aria-label="Voice conversation controls">
-                          <button 
-                              class="control-btn mute-btn" 
-                              id="mute-btn" 
-                              title="Mute microphone"
-                              aria-label="Mute microphone"
-                              role="button"
-                              tabindex="0"
-                          >
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                  <path d="M12 2C10.34 2 9 3.34 9 5V11C9 12.66 10.34 14 12 14C13.66 14 15 12.66 15 11V5C15 3.34 13.66 2 12 2Z" fill="currentColor"/>
-                                  <path d="M19 11C19 15.41 15.41 19 11 19V21H13V23H11H9V21H11V19C6.59 19 3 15.41 3 11H5C5 14.31 7.69 17 11 17H13C16.31 17 19 14.31 19 11H19Z" fill="currentColor"/>
-                              </svg>
-                          </button>
-                          <button 
-                              class="control-btn stop-btn" 
-                              id="stop-btn" 
-                              title="End conversation"
-                              aria-label="End conversation"
-                              role="button"
-                              tabindex="0"
-                          >
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                  <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>
-                              </svg>
-                          </button>
+                          <div class="control-item">
+                              <button 
+                                  class="control-btn mute-btn" 
+                                  id="mute-btn" 
+                                  title="Mute microphone"
+                                  aria-label="Mute microphone"
+                                  role="button"
+                                  tabindex="0"
+                              >
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                      <path d="M12 2C10.34 2 9 3.34 9 5V11C9 12.66 10.34 14 12 14C13.66 14 15 12.66 15 11V5C15 3.34 13.66 2 12 2Z" fill="currentColor"/>
+                                      <path d="M19 11C19 15.41 15.41 19 11 19V21H13V23H11H9V21H11V19C6.59 19 3 15.41 3 11H5C5 14.31 7.69 17 11 17H13C16.31 17 19 14.31 19 11H19Z" fill="currentColor"/>
+                                  </svg>
+                              </button>
+                              <span class="control-label" id="mute-btn-label">Mute</span>
+                          </div>
+                          <div class="control-item">
+                              <button 
+                                  class="control-btn stop-btn" 
+                                  id="stop-btn" 
+                                  title="End conversation"
+                                  aria-label="End conversation"
+                                  role="button"
+                                  tabindex="0"
+                              >
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                      <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>
+                                  </svg>
+                              </button>
+                              <span class="control-label">Stop</span>
+                          </div>
                       </div>
   
                       <!-- Permission State -->
@@ -1056,11 +1024,6 @@ class VoiceChatComponent extends HTMLElement {
         event: "keydown",
         handler: this._handleButtonKeyDown,
       },
-      {
-        selector: "#modal-overlay",
-        event: "click",
-        handler: this.handleModalClick,
-      },
     ];
 
     listeners.forEach(({ selector, event, handler }) => {
@@ -1100,11 +1063,6 @@ class VoiceChatComponent extends HTMLElement {
         event: "keydown",
         handler: this._handleButtonKeyDown,
       },
-      {
-        selector: "#modal-overlay",
-        event: "click",
-        handler: this.handleModalClick,
-      },
     ];
 
     listeners.forEach(({ selector, event, handler }) => {
@@ -1115,15 +1073,6 @@ class VoiceChatComponent extends HTMLElement {
     document.removeEventListener("keydown", this.handleKeyDown);
   }
 
-  /**
-   * Handle modal click events
-   * @param {Event} e - Click event
-   */
-  handleModalClick(e) {
-    // if (e.target === e.currentTarget) {
-    //   this.stopConversation();
-    // }
-  }
 
   /**
    * Handle keyboard events
@@ -1166,9 +1115,9 @@ class VoiceChatComponent extends HTMLElement {
   }
 
   async requestMicrophonePermission() {
+    const permissionState = this.shadowRoot.querySelector("#permission-state");
+    
     try {
-      const permissionState =
-        this.shadowRoot.querySelector("#permission-state");
       permissionState.innerHTML =
         '<div class="loading" style="display: inline-block; margin-right: 8px; vertical-align: middle;"></div> Requesting microphone access...';
 
@@ -1178,8 +1127,6 @@ class VoiceChatComponent extends HTMLElement {
       return true;
     } catch (error) {
       console.error("Microphone permission denied:", error);
-      const permissionState =
-        this.shadowRoot.querySelector("#permission-state");
       permissionState.textContent =
         "Microphone access is required for voice conversation.";
       return false;
@@ -1207,12 +1154,7 @@ class VoiceChatComponent extends HTMLElement {
   toggleSoundWave(show) {
     this.isAgentSpeaking = show;
     const soundWave = this.shadowRoot.querySelector("#sound-wave");
-
-    if (show) {
-      soundWave?.classList.add("active");
-    } else {
-      soundWave?.classList.remove("active");
-    }
+    soundWave?.classList.toggle("active", show);
   }
 
   interceptGetUserMedia() {
@@ -1257,10 +1199,12 @@ class VoiceChatComponent extends HTMLElement {
    */
   _updateMuteButton() {
     const muteBtn = this.shadowRoot?.querySelector("#mute-btn");
-    if (!muteBtn) return;
+    const muteLabel = this.shadowRoot?.querySelector("#mute-btn-label");
+    if (!muteBtn || !muteLabel) return;
 
     muteBtn.classList.toggle("muted", this.isMuted);
     muteBtn.innerHTML = this._getMuteIcon(this.isMuted);
+    muteLabel.textContent = this.isMuted ? "Muted" : "Mute";
     muteBtn.title = this.isMuted ? "Unmute microphone" : "Mute microphone";
     muteBtn.setAttribute("aria-pressed", this.isMuted.toString());
   }
@@ -1532,13 +1476,52 @@ class VoiceChatComponent extends HTMLElement {
       }
 
       // Stop media stream
-      this._stopMediaStream();
+      if (this.capturedStream) {
+        this.capturedStream.getTracks().forEach((track) => {
+          track.stop();
+        });
+        this.capturedStream = null;
+      }
 
       // Restore original getUserMedia
-      this._restoreGetUserMedia();
+      if (this.originalGetUserMedia) {
+        navigator.mediaDevices.getUserMedia = this.originalGetUserMedia;
+        this.originalGetUserMedia = null;
+      }
 
-      // Update UI state
-      this._resetUIState();
+      // Reset UI state
+      const modalOverlay = this.shadowRoot?.querySelector("#modal-overlay");
+      const muteBtn = this.shadowRoot?.querySelector("#mute-btn");
+      const permissionState = this.shadowRoot?.querySelector("#permission-state");
+      const loader = this.shadowRoot?.querySelector("#connection-loader");
+      const statusDot = this.shadowRoot?.querySelector("#status-dot");
+
+      // Hide modal
+      if (modalOverlay) {
+        modalOverlay.classList.remove("show");
+      }
+
+      // Reset connection indicator
+      if (loader) {
+        loader.style.display = "none";
+      }
+      if (statusDot) {
+        statusDot.style.display = "block";
+      }
+
+      // Reset mute state
+      this.isMuted = false;
+      if (muteBtn) {
+        muteBtn.classList.remove("muted");
+        muteBtn.innerHTML = this._getMuteIcon(false);
+        muteBtn.title = "Mute microphone";
+      }
+
+      // Clear permission state
+      if (permissionState) {
+        permissionState.textContent = "";
+        permissionState.style.color = "";
+      }
 
       // Update connection status
       this.updateConnectionStatus(false);
@@ -1548,68 +1531,6 @@ class VoiceChatComponent extends HTMLElement {
     }
   }
 
-  /**
-   * Stop media stream and cleanup
-   * @private
-   */
-  _stopMediaStream() {
-    if (this.capturedStream) {
-      this.capturedStream.getTracks().forEach((track) => {
-        track.stop();
-      });
-      this.capturedStream = null;
-    }
-  }
-
-  /**
-   * Restore original getUserMedia function
-   * @private
-   */
-  _restoreGetUserMedia() {
-    if (this.originalGetUserMedia) {
-      navigator.mediaDevices.getUserMedia = this.originalGetUserMedia;
-      this.originalGetUserMedia = null;
-    }
-  }
-
-  /**
-   * Reset UI state after conversation ends
-   * @private
-   */
-  _resetUIState() {
-    const modalOverlay = this.shadowRoot?.querySelector("#modal-overlay");
-    const muteBtn = this.shadowRoot?.querySelector("#mute-btn");
-    const permissionState = this.shadowRoot?.querySelector("#permission-state");
-    const loader = this.shadowRoot?.querySelector("#connection-loader");
-    const statusDot = this.shadowRoot?.querySelector("#status-dot");
-
-    // Hide modal
-    if (modalOverlay) {
-      modalOverlay.classList.remove("show");
-    }
-
-    // Reset connection indicator
-    if (loader) {
-      loader.style.display = "none";
-    }
-    if (statusDot) {
-      statusDot.style.display = "block";
-    }
-
-    // Reset mute state
-    this.isMuted = false;
-    if (muteBtn) {
-      muteBtn.classList.remove("muted");
-      muteBtn.innerHTML = this._getMuteIcon(false);
-      muteBtn.title = "Mute microphone";
-    }
-
-    // Clear permission state
-    if (permissionState) {
-      permissionState.textContent = "";
-      permissionState.style.color = "";
-    }
-  }
 
   /**
    * Get mute icon SVG
