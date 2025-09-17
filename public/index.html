@@ -5,18 +5,229 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MindFire CDN</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --mindfire-primary: #ff6633;
+      --mindfire-primary-light: #fd460f;
+      --mindfire-primary-dark: #e55a2b;
+    }
+    
+    body {
+      background: linear-gradient(135deg, var(--mindfire-primary) 0%, #ff8a66 50%, #ff5c25 100%);
+      min-height: 100vh;
+    }
+    .main-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(255, 102, 51, 0.2);
+      border: 1px solid rgba(255, 102, 51, 0.1);
+    }
+    .url-item {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+    .url-item:hover {
+      background: #fff5f2;
+      border-color: var(--mindfire-primary-light);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 102, 51, 0.15);
+    }
+    .copy-btn {
+      transition: all 0.3s ease;
+      border-color: var(--mindfire-primary);
+      color: var(--mindfire-primary);
+    }
+    .copy-btn:hover {
+      transform: scale(1.1);
+      background-color: var(--mindfire-primary);
+      border-color: var(--mindfire-primary);
+      color: white;
+    }
+    .copy-btn.copied {
+      background-color: #28a745 !important;
+      border-color: #28a745 !important;
+    }
+    .url-text {
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      word-break: break-all;
+    }
+    .version-badge {
+      font-size: 0.8rem;
+    }
+    .text-primary {
+      color: var(--mindfire-primary) !important;
+    }
+    .btn-outline-primary {
+      --bs-btn-color: var(--mindfire-primary);
+      --bs-btn-border-color: var(--mindfire-primary);
+      --bs-btn-hover-color: #fff;
+      --bs-btn-hover-bg: var(--mindfire-primary);
+      --bs-btn-hover-border-color: var(--mindfire-primary);
+      --bs-btn-focus-shadow-rgb: 255, 102, 51;
+      --bs-btn-active-color: #fff;
+      --bs-btn-active-bg: var(--mindfire-primary);
+      --bs-btn-active-border-color: var(--mindfire-primary);
+    }
+    .badge.bg-success {
+      background-color: var(--mindfire-primary) !important;
+    }
+    .display-4 {
+      background: linear-gradient(135deg, var(--mindfire-primary), var(--mindfire-primary-dark));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
 </head>
 
-<body style="font-family: sans-serif;">
-  <h1>Welcome to MindFire's Content Delivery Network (CDN)</h1>
-  <p>To learn more visit our documentation <a href="https://mindfire.dev" target="_blank">here</a>.</p>
-  <p>Here's a list of files hosted on this CDN:</p>
-  <ul>
-    <li>MindFire's Voice Chat Component: <mark>https://mf-cdn.web.app/voice-chat-component-v010-stg.js</mark></li>
-    <li>MindFire's latest JS SDK (Pixel) Version 0.3.0: <mark>https://mf-cdn.web.app/pixel-v030.js</mark></li>
-    <li>Version 0.2.0: https://mf-cdn.web.app/pixel-v020.js</li>
-    <li>Version 0.1.0: https://mf-cdn.web.app/pixel-v010.js</li>
-  </ul>
+<body>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="main-container p-5">
+          <div class="text-center mb-5">
+            <h1 class="display-5 fw-bold text-primary mb-3">              
+              MindFire CDN
+            </h1>
+            
+            <p class="text-muted">
+              To learn more visit our documentation 
+              <a href="https://mindfire.dev" target="_blank" class="text-decoration-none">
+                <i class="bi bi-arrow-up-right-square me-1"></i>here
+              </a>
+            </p>
+          </div>
+
+          <div class="mb-4">
+            
+            <!-- MindFire's Pixel (JS SDK) Section -->
+            <div class="mb-4">
+              <h5 class="text-primary mb-3">
+                <i class="bi bi-code-square me-2"></i>
+                MindFire's Pixel (JS SDK)
+              </h5>
+              
+              <div class="url-item p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="flex-grow-1 me-3">
+                    <div class="d-flex align-items-center mb-2">
+                      <span class="badge bg-success version-badge me-2">Latest</span>
+                      <span class="fw-semibold">Version 0.3.0</span>
+                    </div>
+                    <div class="url-text text-muted" id="url-1">https://mf-cdn.web.app/pixel-v030.js</div>
+                  </div>
+                  <button class="btn btn-outline-primary copy-btn" onclick="copyToClipboard('url-1', this)">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="url-item p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="flex-grow-1 me-3">
+                    <div class="d-flex align-items-center mb-2">
+                      <span class="badge bg-secondary version-badge me-2">v0.2.0</span>
+                      <span class="fw-semibold">Version 0.2.0</span>
+                    </div>
+                    <div class="url-text text-muted" id="url-2">https://mf-cdn.web.app/pixel-v020.js</div>
+                  </div>
+                  <button class="btn btn-outline-primary copy-btn" onclick="copyToClipboard('url-2', this)">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="url-item p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="flex-grow-1 me-3">
+                    <div class="d-flex align-items-center mb-2">
+                      <span class="badge bg-secondary version-badge me-2">v0.1.0</span>
+                      <span class="fw-semibold">Version 0.1.0</span>
+                    </div>
+                    <div class="url-text text-muted" id="url-3">https://mf-cdn.web.app/pixel-v010.js</div>
+                  </div>
+                  <button class="btn btn-outline-primary copy-btn" onclick="copyToClipboard('url-3', this)">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Voice Chat Component Section -->
+            <div class="mb-4">
+              <h5 class="text-primary mb-3">
+                <i class="bi bi-chat-dots me-2"></i>
+                Voice Chat Component
+              </h5>
+              
+              <div class="url-item p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="flex-grow-1 me-3">
+                    <div class="d-flex align-items-center mb-2">
+                      <span class="badge bg-success version-badge me-2">Latest</span>
+                      <span class="fw-semibold">Version 0.2.0 (Staging)</span>
+                    </div>
+                    <div class="url-text text-muted" id="url-4">https://mf-cdn.web.app/voice-chat-component-v020-stg.js</div>
+                  </div>
+                  <button class="btn btn-outline-primary copy-btn" onclick="copyToClipboard('url-4', this)">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="url-item p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="flex-grow-1 me-3">
+                    <div class="d-flex align-items-center mb-2">
+                      <span class="badge bg-secondary version-badge me-2">v0.1.0</span>
+                      <span class="fw-semibold">Version 0.1.0 (Staging)</span>
+                    </div>
+                    <div class="url-text text-muted" id="url-5">https://mf-cdn.web.app/voice-chat-component-v010-stg.js</div>
+                  </div>
+                  <button class="btn btn-outline-primary copy-btn" onclick="copyToClipboard('url-5', this)">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  
+  <script>
+    function copyToClipboard(elementId, button) {
+      const element = document.getElementById(elementId);
+      const text = element.textContent;
+      
+      navigator.clipboard.writeText(text).then(function() {
+        // Change button appearance temporarily
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i>';
+        button.classList.add('copied');
+        
+        // Reset after 2 seconds
+        setTimeout(function() {
+          button.innerHTML = originalHTML;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+      });
+    }
+  </script>
 </body>
 
 </html>
