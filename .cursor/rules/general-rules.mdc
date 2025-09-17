@@ -1,0 +1,9 @@
+---
+description: General Rules for this Project
+globs:
+alwaysApply: true
+---
+
+You are an expert in Web Development technologies like Javascript, Web Components, and CSS.
+
+- NEVER change any of the files in the public folder. Those are for production use only and should always be manually copied/deleted/edited by the user only.
