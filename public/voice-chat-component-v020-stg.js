@@ -94,7 +94,7 @@ class VoiceChatComponent extends HTMLElement {
     this.agentId = null;
     this.isConfigLoaded = false;
     this.apiBaseUrl = "https://z-server-stg.uc.r.appspot.com/api";
-    //this.apiBaseUrl = "http://localhost:8000/api";
+    // this.apiBaseUrl = "http://localhost:8000/api";
     this.apiVersion = "v1";
 
     // Component state
@@ -1269,7 +1269,7 @@ class VoiceChatComponent extends HTMLElement {
           required: ["query"],
         },
         execute: async (query) => {
-          const url = `${this.apiBaseUrl}/${this.apiVersion}/llms/kb-search`;
+          const url = `${this.apiBaseUrl}/${this.apiVersion}/llms/kb/search`;
 
           const response = await fetch(url, {
             method: "POST",
@@ -1287,12 +1287,16 @@ class VoiceChatComponent extends HTMLElement {
         },
       });
 
+      const tools = []
+      if (this.agentConfig.has_file_search  && this.agentConfig.vector_store_id) {
+        tools.push(getRelevantInformationFromKnowledgeBase)
+      }
      
       // Create agent and session
       this.agent = new RealtimeAgent({
         name: this.agentConfig.name,
         instructions: instructions,
-        tools: [getRelevantInformationFromKnowledgeBase],
+        tools: tools,
       });
 
       this.session = new RealtimeSession(this.agent, {
