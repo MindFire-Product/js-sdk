@@ -12,10 +12,10 @@ import {
  * @example
  * // 3 steps to use the component:
  * // 1. Add the component to your HTML
- * <voice-chat-component data-agent-id="your-agent-id"></voice-chat-component>
+ * <voice-chat-component data-agent-id="your-agent-id" data-account-id="your-account-id"></voice-chat-component>
  * 
  * // 2. Load the script
- * <script src="voice-chat-component.js" type="module"></script>
+ * <script src="https://mf-cdn.web.app/voice-chat-component-v020-stg.js" type="module"></script>
  * 
  * // 3. Optionally set visitor info
  * <script>
@@ -94,7 +94,7 @@ class VoiceChatComponent extends HTMLElement {
     this.agentId = null;
     this.isConfigLoaded = false;
     this.apiBaseUrl = "https://z-server-stg.uc.r.appspot.com/api";
-    // this.apiBaseUrl = "http://localhost:8000/api";
+    //this.apiBaseUrl = "http://localhost:8000/api";
     this.apiVersion = "v1";
 
     // Component state
@@ -131,6 +131,7 @@ class VoiceChatComponent extends HTMLElement {
     this.stopConversation = this.stopConversation.bind(this);
     this.toggleMute = this.toggleMute.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
+    this._handleButtonKeyDown = this._handleButtonKeyDown.bind(this);
   }
 
   /**
@@ -155,12 +156,14 @@ class VoiceChatComponent extends HTMLElement {
     // The component is now connected to the DOM.
     // We read the agent ID from the attribute one time and load its configuration.
     const agentId = this.getAttribute("data-agent-id");
-    if (agentId && typeof agentId === "string") {
+    const accountId = this.getAttribute("data-account-id");
+    if (agentId && typeof agentId === "string" && accountId && typeof accountId === "string") {
       this.agentId = agentId.trim();
+      this.accountId = accountId.trim();
       this.loadAgentConfiguration();
     } else {
       console.error(
-        "VoiceChatComponent Error: `data-agent-id` attribute is missing or invalid."
+        "VoiceChatComponent Error: `data-agent-id` or `data-account-id` attribute is missing or invalid."
       );
       // Hide the component if no valid agent ID is provided
       this.hideComponent();
@@ -257,7 +260,7 @@ class VoiceChatComponent extends HTMLElement {
    * @async
    */
   async loadAgentConfiguration() {
-    if (!this.agentId || this.isDestroyed) {
+    if (!this.agentId || !this.accountId || this.isDestroyed) {
       return;
     }
 
@@ -285,7 +288,7 @@ class VoiceChatComponent extends HTMLElement {
    */
   async _fetchAgentConfiguration() {
     const response = await fetch(
-      `${this.apiBaseUrl}/${this.apiVersion}/agents/${this.agentId}`,
+      `${this.apiBaseUrl}/${this.apiVersion}/agents/${this.accountId}/${this.agentId}`,
       {
         method: "GET",
         headers: {
@@ -311,7 +314,7 @@ class VoiceChatComponent extends HTMLElement {
    */
   async _processAgentConfiguration(data) {
     // Check if agent is active
-    if (data.is_active === false) {
+    if (data.is_active !== true) {
       console.log(`Agent ${this.agentId} is not active - hiding component`);
       this.hideComponent();
       return;
@@ -1028,7 +1031,7 @@ class VoiceChatComponent extends HTMLElement {
 
     listeners.forEach(({ selector, event, handler }) => {
       const element = this.shadowRoot?.querySelector(selector);
-      element?.addEventListener(event, handler.bind(this));
+      element?.addEventListener(event, handler);
     });
 
     // Handle ESC key to close modal
@@ -1067,7 +1070,7 @@ class VoiceChatComponent extends HTMLElement {
 
     listeners.forEach(({ selector, event, handler }) => {
       const element = this.shadowRoot?.querySelector(selector);
-      element?.removeEventListener(event, handler.bind(this));
+      element?.removeEventListener(event, handler);
     });
 
     document.removeEventListener("keydown", this.handleKeyDown);
@@ -1104,7 +1107,7 @@ class VoiceChatComponent extends HTMLElement {
       if (!this.agentConfig) {
         throw new Error("Agent configuration not loaded");
       }
-      const url = `${this.apiBaseUrl}/${this.apiVersion}/llms/token/${this.agentConfig.voice}`;
+      const url = `${this.apiBaseUrl}/${this.apiVersion}/llms/token/${this.accountId}/${this.agentConfig.voice}`;
       const response = await fetch(url);
       const data = await response.json();
       return data.ephemeral_key;
@@ -1236,7 +1239,7 @@ class VoiceChatComponent extends HTMLElement {
       if (!this.isConfigLoaded || !this.agentConfig) {
         throw new Error("Agent configuration not loaded");
       }
-      console.log(" **** ====== Agent configuration is:", this.agentConfig);
+      // console.log(" **** ====== Agent configuration is:", this.agentConfig);
 
       // Show modal and update UI
       this._showModal();
@@ -1269,7 +1272,7 @@ class VoiceChatComponent extends HTMLElement {
           required: ["query"],
         },
         execute: async (query) => {
-          const url = `${this.apiBaseUrl}/${this.apiVersion}/llms/kb/search`;
+          const url = `${this.apiBaseUrl}/${this.apiVersion}/llms/kb/${this.accountId}/search`;
 
           const response = await fetch(url, {
             method: "POST",
