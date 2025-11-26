@@ -12,6 +12,7 @@ examples-temp
 node_modules
 pnpm-global
 TODOs.md
+AGENTs.md
 *.timestamp-*.mjs
 .firebase
 .firebaserc
