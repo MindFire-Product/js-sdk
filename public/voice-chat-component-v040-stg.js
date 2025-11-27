@@ -15,7 +15,7 @@ import {
  * <voice-chat-component data-agent-id="your-agent-id" data-account-id="your-account-id"></voice-chat-component>
  *
  * // 2. Load the script
- * <script src="https://mf-cdn.web.app/voice-chat-component-v030-stg.js" type="module"></script>
+ * <script src="https://mf-cdn.web.app/voice-chat-component-v040-stg.js" type="module"></script>
  *
  * // 3. Optionally set visitor info
  * <script>
