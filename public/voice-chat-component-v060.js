@@ -2,7 +2,7 @@ import {
   RealtimeAgent,
   RealtimeSession,
   tool,
-} from "https://cdn.jsdelivr.net/npm/@openai/agents-realtime@0.1.1/+esm";
+} from "https://cdn.jsdelivr.net/npm/@openai/agents-realtime@0.3.6/+esm";
 
 /**
  * VoiceChatComponent - A web component for voice-based AI conversations
@@ -15,7 +15,7 @@ import {
  * <voice-chat-component data-agent-id="your-agent-id" data-account-id="your-account-id"></voice-chat-component>
  *
  * // 2. Load the script
- * <script src="https://mf-cdn.web.app/voice-chat-component-v050-stg.js" type="module"></script>
+ * <script src="https://mf-cdn.web.app/voice-chat-component-v060.js" type="module"></script>
  *
  * // 3. Optionally set visitor info
  * <script>
@@ -48,14 +48,14 @@ import {
  *   console.log('Agent started speaking');
  * });
  *
- * voiceComponent.addEventListener('voice.conversation.ended', (event) => { // this is a custom event fired by the Voice Chat Component
- *   console.log('Conversation ended:', event.detail); 
- *   {  trigger: 'user-request', 
- *     timestamp: '2025-10-20T18:42:14.719Z', 
- *     transcript: [{speaker: 'agent', text: 'Good evening, ...'}, {speaker: 'user', text: 'Can you please... '}], 
- *     durationMs: 7108, 
- *     durationSeconds: 7.108}
- *   }
+ * voiceComponent.addEventListener('voice.conversation.ended', (event) => {
+ *   console.log('Conversation ended:', event.detail);
+ * });
+ *
+ * voiceComponent.addEventListener('guardrail_tripped', (event) => {
+ *   console.log('Guardrail triggered:', event.detail);
+ * });
+ *
  * voiceComponent.addEventListener('error', (event) => {
  *   console.error('Session error:', event.detail);
  * });
@@ -63,9 +63,11 @@ import {
  * @event session.created - Session created event
  * @event output_audio_buffer.started - Agent started speaking
  * @event output_audio_buffer.stopped - Agent stopped speaking
+ * @event input_audio_buffer.timeout_triggered - User timeout triggered
  * @event response.output_audio_transcript.done - Agent speech transcribed
  * @event conversation.item.input_audio_transcription.completed - User speech transcribed
- * @event voice.conversation.ended - Conversation speech transcribed and duration reported
+ * @event voice.conversation.ended - Summary event fired when the conversation finishes (custom event)
+ * @event guardrail_tripped - Fired when an output guardrail is triggered
  * @event error - Session error occurred
  */
 class VoiceChatComponent extends HTMLElement {
@@ -102,8 +104,7 @@ class VoiceChatComponent extends HTMLElement {
     // Component configuration
     this.agentId = null;
     this.isConfigLoaded = false;
-    // this.apiBaseUrl = "https://z-server-stg.uc.r.appspot.com/api";
-    this.apiBaseUrl = "http://localhost:8000/api";
+    this.apiBaseUrl = "https://z-server-prod.uc.r.appspot.com/api";
     this.apiVersion = "v1";
 
     // Component state
@@ -170,9 +171,12 @@ class VoiceChatComponent extends HTMLElement {
    * @param {string} trigger - Identifier for what caused the end
    */
   _emitConversationEnded(trigger) {
-    if (!this.conversationActive && this.conversationTranscript.length === 0) {
+    if (!this.conversationActive && (!this.conversationTranscript || this.conversationTranscript.length === 0)) {
+      console.log(`[Voice Component] _emitConversationEnded ignored (trigger: ${trigger}): session not active and transcript empty.`);
       return;
     }
+
+    console.log(`[Voice Component] _emitConversationEnded (trigger: ${trigger})`);
 
     const transcript = this.conversationTranscript.map((entry) => ({
       speaker: entry.speaker,
@@ -1098,6 +1102,11 @@ class VoiceChatComponent extends HTMLElement {
 
     // Handle ESC key to close modal
     document.addEventListener("keydown", this.handleKeyDown);
+
+    // Debug: log the conversation ended event when it fires
+    this.addEventListener("voice.conversation.ended", (e) => {
+      console.log(" [Voice Component] voice.conversation.ended emitted:", e.detail);
+    });
   }
 
   /**
@@ -1357,7 +1366,6 @@ class VoiceChatComponent extends HTMLElement {
         },
       });
 
-      console.log("Here");
       if (this.agentConfig.mcp_zapier) {
         console.log("MCP Zapier is enabled");
         console.log("MCP Zapier config is:", this.agentConfig.mcp_zapier);
@@ -1405,9 +1413,33 @@ class VoiceChatComponent extends HTMLElement {
         tools: tools,
       });
 
+      const guardrails = [
+        {
+          name: "No mention of 'I just got promoted at work today.'",
+          async execute({ agentOutput }) {
+            const hulloInOutput = agentOutput.includes("I just got promoted at work today. But it's bittersweet.");
+            return {
+              tripwireTriggered: hulloInOutput,
+              outputInfo: { hulloInOutput },
+            };
+          },
+        },
+      ];
+
       this.session = new RealtimeSession(this.agent, {
         model: "gpt-realtime",
+        outputGuardrails: guardrails,
         tracingDisabled: false,
+        config: {
+          audio: {
+            input: {
+              turnDetection: {
+                type: "server_vad",
+                idleTimeoutMs: 15000,
+              }
+            }
+          }
+        }
       });
 
       // Setup event handlers
@@ -1415,6 +1447,7 @@ class VoiceChatComponent extends HTMLElement {
 
       // Connect to session
       await this.session.connect({ apiKey: ephemeralKey });
+
     } catch (error) {
       console.error("Error starting conversation:", error);
       this._handleConversationError(error);
@@ -1521,6 +1554,10 @@ class VoiceChatComponent extends HTMLElement {
           this.toggleSoundWave(false);
           break;
 
+        case "input_audio_buffer.timeout_triggered":
+          console.log("Audio timeout triggered:", event);
+          break;
+
         case "response.output_audio_transcript.done":
           console.log("Agent:", event.transcript);
           if (event?.transcript) {
@@ -1533,6 +1570,10 @@ class VoiceChatComponent extends HTMLElement {
           if (event?.transcript) {
             this._appendTranscriptEntry("user", event.transcript);
           }
+          break;
+
+        case "guardrail_tripped":
+          console.log("Guardrail tripped:", event);
           break;
 
         case "error":
@@ -1590,14 +1631,24 @@ class VoiceChatComponent extends HTMLElement {
    */
   stopConversation() {
     try {
-      // Close session
+      // 1. First, emit the ended event BEFORE clearing session state or closing connection.
+      // This ensures we capture the duration and transcript safely.
+      if (this.conversationActive || (this.conversationTranscript && this.conversationTranscript.length > 0)) {
+        this._emitConversationEnded("user-stop");
+      }
+
+      // 2. Safely close the session
       if (this.session) {
-        this.session.close();
+        try {
+          this.session.close();
+        } catch (sessionError) {
+          console.warn("Non-critical error closing session:", sessionError);
+        }
         this.session = null;
         this.agent = null;
       }
 
-      // Stop media stream
+      // 3. Stop media stream
       if (this.capturedStream) {
         this.capturedStream.getTracks().forEach((track) => {
           track.stop();
@@ -1605,17 +1656,16 @@ class VoiceChatComponent extends HTMLElement {
         this.capturedStream = null;
       }
 
-      // Restore original getUserMedia
+      // 4. Restore original getUserMedia
       if (this.originalGetUserMedia) {
         navigator.mediaDevices.getUserMedia = this.originalGetUserMedia;
         this.originalGetUserMedia = null;
       }
 
-      // Reset UI state
+      // 5. Reset UI state
       const modalOverlay = this.shadowRoot?.querySelector("#modal-overlay");
       const muteBtn = this.shadowRoot?.querySelector("#mute-btn");
-      const permissionState =
-        this.shadowRoot?.querySelector("#permission-state");
+      const permissionState = this.shadowRoot?.querySelector("#permission-state");
       const loader = this.shadowRoot?.querySelector("#connection-loader");
       const statusDot = this.shadowRoot?.querySelector("#status-dot");
 
@@ -1646,15 +1696,11 @@ class VoiceChatComponent extends HTMLElement {
         permissionState.style.color = "";
       }
 
-      if (this.conversationActive || this.conversationTranscript.length > 0) {
-        this._emitConversationEnded("user-request");
-      }
-
       // Update connection status
       this.updateConnectionStatus(false);
       this.toggleSoundWave(false);
     } catch (error) {
-      console.error("Error stopping conversation:", error);
+      console.error("Critical error in stopConversation:", error);
     }
   }
 
