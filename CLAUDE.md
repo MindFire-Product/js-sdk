@@ -122,10 +122,24 @@ All dependencies are loaded from CDN at runtime. There is no `npm install` or bu
 
 After an agent edits a `-dev.js` file, a human developer will review the changes and manually copy the file to a new versioned staging/production file.
 
+## ⚠️ Pre-Deployment Checklist
+
+Before any file is deployed (copied from dev → staging or staging → production), **always verify the `apiBaseUrl`** in the file:
+
+| File type | Required `apiBaseUrl` |
+|-----------|----------------------|
+| `-stg.js` (staging) | `https://z-server-stg.uc.r.appspot.com/api` |
+| Production (no suffix) | `https://z-server-prod.uc.r.appspot.com/api` |
+
+The `-dev.js` source files may point to either environment during development — but the correct URL **must** be set before copying to a versioned file. This has caused production incidents before (v070 was accidentally shipped pointing to staging).
+
+When helping prepare a release, proactively check the `apiBaseUrl` value and flag it if it does not match the target environment.
+
 ## Feature Specs
 
 Planned and in-progress feature specs live in `specs/`. Before implementing any new feature, check this directory for a spec doc.
 
 | Spec file | Feature | Status |
 |-----------|---------|--------|
-| `specs/voice-chat-component-v070-spec.md` | Rename `visitorInfo` → `data`; add `history` property | Ready to implement |
+| `specs/voice-chat-component-v070-spec.md` | Rename `visitorInfo` → `data`; add `history` property | Shipped |
+| `specs/voice-chat-component-v080-spec.md` | Dark mode button fix, button customization, closed captions | In development |

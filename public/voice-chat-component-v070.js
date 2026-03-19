@@ -118,7 +118,7 @@ class VoiceChatComponent extends HTMLElement {
     // Component configuration
     this.agentId = null;
     this.isConfigLoaded = false;
-    this.apiBaseUrl = "https://z-server-stg.uc.r.appspot.com/api";
+    this.apiBaseUrl = "https://z-server-prod.uc.r.appspot.com/api";
     this.apiVersion = "v1";
 
     // Component state
