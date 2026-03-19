@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>v080 Dev Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f3f4f6;
+    }
+    h1 { font-size: 18px; color: #374151; margin-bottom: 8px; }
+    p { font-size: 13px; color: #6b7280; margin-bottom: 32px; }
+  </style>
+</head>
+<body>
+  <h1>v080 Dev — Component Test</h1>
+  <p>Agent: 6939b1f2fa486d985bff76ae | Account: 36038</p>
+
+  <voice-chat-component
+    data-agent-id="6939b1f2fa486d985bff76ae"
+    data-account-id="36038"
+  ></voice-chat-component>
+
+  <script type="module">
+    import './voice-chat-component-v080-dev.js';
+
+    // Force show_cc_button=true for testing (backend field not yet deployed)
+    customElements.whenDefined('voice-chat-component').then(() => {
+      const comp = document.querySelector('voice-chat-component');
+      const orig = comp._processAgentConfiguration.bind(comp);
+      comp._processAgentConfiguration = async (data) => {
+        data.show_cc_button = true;
+        return orig(data);
+      };
+    });
+  </script>
+</body>
+</html>
