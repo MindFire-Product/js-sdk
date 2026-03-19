@@ -2,7 +2,7 @@ import {
   RealtimeAgent,
   RealtimeSession,
   tool,
-} from "https://cdn.jsdelivr.net/npm/@openai/agents-realtime@0.3.6/+esm";
+} from "https://cdn.jsdelivr.net/npm/@openai/agents-realtime@0.7.2/+esm";
 
 /**
  * VoiceChatComponent - A web component for voice-based AI conversations
