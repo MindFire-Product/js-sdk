@@ -10,6 +10,14 @@
 
 The dark mode CSS media query was overriding the agent's configured `text_color` on the start button, forcing it to white. A new `--button-text-color` CSS variable is now used for the button, which dark mode does not override.
 
+### Bug Fix: Modal text white-on-white in light mode
+
+The `--text-color` CSS variable was set to the agent's configured button text color (e.g. `#ffffff`), causing white modal text on a white background. Now hardcoded to `#1f2937` for light mode. Dark mode continues to override to white.
+
+### Feature: Configurable button shadow
+
+New `show_button_shadow` theme property (boolean, default `true`). When `false`, removes box-shadow from the filled button in all states (base, hover, high-DPI). Outline and soft styles are unaffected.
+
 ### Feature: Button size and style customization (MPR-181)
 
 Two new agent theme properties control the start button appearance:
@@ -44,16 +52,6 @@ To test, create an HTML page that loads the v0.8.0 staging component:
 
   <script type="module">
     import 'https://mf-cdn.web.app/voice-chat-component-v080-stg.js';
-
-    // Force show_cc_button for testing (remove once backend supports this field)
-    customElements.whenDefined('voice-chat-component').then(() => {
-      const vc = document.querySelector('voice-chat-component');
-      const orig = vc._processAgentConfiguration.bind(vc);
-      vc._processAgentConfiguration = async (data) => {
-        data.show_cc_button = true;
-        return orig(data);
-      };
-    });
   </script>
 
   <script>
@@ -69,8 +67,6 @@ To test, create an HTML page that loads the v0.8.0 staging component:
 </html>
 ```
 
-> **Note**: The `show_cc_button` field is not yet available in the agent config API. The script above patches it to `true` for testing. Remove the patch once the backend supports this field.
-
 ---
 
 ## Test Cases
@@ -83,6 +79,45 @@ To test, create an HTML page that loads the v0.8.0 staging component:
 | 2 | Open the test page in a browser set to **light mode** | Start button text matches the configured `text_color` |
 | 3 | Switch the browser/OS to **dark mode** | Start button text color remains the configured `text_color` — it does NOT turn white |
 | 4 | Verify the modal text (agent name, status) turns white in dark mode | Modal text adapts to dark mode as expected |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-1b: Modal text readable in light mode
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Configure an agent with a white `text_color` (`#ffffff`) | Agent config loads |
+| 2 | Open the test page in **light mode** | Modal agent name and status text are dark (`#1f2937`) on white background — NOT white-on-white |
+| 3 | Switch to **dark mode** | Modal text turns white (`#f9fafb`) on dark background — still readable |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-1c: Button shadow — enabled (default)
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Set `show_button_shadow: true` (or leave unset) in agent theme | Agent config loads |
+| 2 | Inspect the filled-style start button | Box-shadow is visible |
+| 3 | Hover over the button | Enhanced shadow is visible |
+| 4 | Test on a high-DPI display (Retina) or emulate one in DevTools | High-DPI shadow is visible |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-1d: Button shadow — disabled
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Set `show_button_shadow: false` in agent theme | Agent config loads |
+| 2 | Inspect the filled-style start button | `box-shadow: none` — no shadow visible |
+| 3 | Hover over the button | Still no shadow |
+| 4 | Test on a high-DPI display or emulate one | Still no shadow (high-DPI media query respects the setting) |
+| 5 | Switch to outline or soft button style | Shadow behavior is unaffected (these styles never have shadows) |
 
 **Result**: Pass / Fail
 
@@ -343,6 +378,9 @@ To test, create an HTML page that loads the v0.8.0 staging component:
 | Test Case | Feature | Priority | Result |
 |-----------|---------|----------|--------|
 | TC-1 | Dark mode button text fix (MPR-180) | High | |
+| TC-1b | Modal text readable in light mode | High | |
+| TC-1c | Button shadow — enabled (default) | Medium | |
+| TC-1d | Button shadow — disabled | High | |
 | TC-2 | Button size — small | Medium | |
 | TC-3 | Button size — medium (default) | High | |
 | TC-4 | Button size — large | Medium | |

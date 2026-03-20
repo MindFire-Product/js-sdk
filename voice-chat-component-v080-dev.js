@@ -554,7 +554,7 @@ class VoiceChatComponent extends HTMLElement {
                       --button-bg-color: ${this.agentConfig.theme.primary_color
       };
                       --primary-color: ${this.agentConfig.theme.primary_color};
-                      --text-color: ${this.agentConfig.theme.text_color};
+                      --text-color: #1f2937;
                       --secondary-text-color: #6b7280;
                       --modal-bg-color: #ffffff;
                       --border-radius: ${this.agentConfig.theme.border_radius};
@@ -586,7 +586,7 @@ class VoiceChatComponent extends HTMLElement {
                       font-weight: 500;
                       font-family: var(--font-family);
                       cursor: pointer;
-                      box-shadow: 0 4px 20px rgba(0,123,255,0.3);
+                      box-shadow: ${this.agentConfig.theme.show_button_shadow !== false ? '0 4px 20px rgba(0,123,255,0.3)' : 'none'};
                       transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55), box-shadow 0.3s ease;
                       min-height: 44px;
                   }
@@ -601,7 +601,7 @@ class VoiceChatComponent extends HTMLElement {
                   
                   .start-button:hover:not(.loading) {
                       transform: translateY(-2px);
-                      box-shadow: 0 6px 25px rgba(0,123,255,0.4);
+                      box-shadow: ${this.agentConfig.theme.show_button_shadow !== false ? '0 6px 25px rgba(0,123,255,0.4)' : 'none'};
                   }
                   
                   .start-button:active {
@@ -1039,11 +1039,11 @@ class VoiceChatComponent extends HTMLElement {
                   /* High DPI displays */
                   @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
                       .start-button {
-                          box-shadow: 0 2px 10px rgba(0,123,255,0.3);
+                          box-shadow: ${this.agentConfig.theme.show_button_shadow !== false ? '0 2px 10px rgba(0,123,255,0.3)' : 'none'};
                       }
-                      
+
                       .start-button:hover {
-                          box-shadow: 0 3px 15px rgba(0,123,255,0.4);
+                          box-shadow: ${this.agentConfig.theme.show_button_shadow !== false ? '0 3px 15px rgba(0,123,255,0.4)' : 'none'};
                       }
                   }
                   

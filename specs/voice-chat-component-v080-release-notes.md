@@ -11,9 +11,17 @@
 
 The dark mode CSS media query was overriding the agent's configured text color on the start button, forcing it to white regardless of branding. The button now uses a dedicated `--button-text-color` CSS variable that dark mode does not touch, preserving the agent's intended button text color in all color schemes.
 
+### Modal text white-on-white in light mode
+
+The `--text-color` CSS variable (used for the modal agent name and status text) was set to the agent's configured button text color (e.g. `#ffffff`), causing white text on a white modal background. This is now hardcoded to a dark gray (`#1f2937`) for light mode. Dark mode continues to override it to white as expected.
+
 ---
 
 ## New Features
+
+### Configurable button shadow
+
+A new `show_button_shadow` theme property (boolean, default `true`) controls whether the filled-style button displays a box-shadow. When set to `false` in the admin UI, the shadow is removed in all states (default, hover, and high-DPI). Outline and soft button styles are unaffected (they never have shadows).
 
 ### Button size and style customization (MPR-181)
 

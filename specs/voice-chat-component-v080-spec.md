@@ -74,6 +74,76 @@ The existing dark mode block should remain unchanged:
 
 ---
 
+## Feature 1b: Fix modal text white-on-white in light mode
+
+### Problem
+
+The `--text-color` CSS variable was set to the agent's configured `theme.text_color` (e.g. `#ffffff` for white button text), but this variable was also used for the modal agent name and other modal text. This caused white text on a white modal background in light mode.
+
+### Solution
+
+Hardcode `--text-color` to `#1f2937` (dark gray) in the `:host` CSS variable block. The dark mode `@media (prefers-color-scheme: dark)` block already overrides `--text-color` to `#f9fafb`, so no change is needed there. The button uses `--button-text-color` (from Feature 1) separately.
+
+### Changes
+
+In the `:host` CSS variables block inside `render()`:
+
+```diff
+- --text-color: ${this.agentConfig.theme.text_color};
++ --text-color: #1f2937;
+```
+
+---
+
+## Feature 1c: Configurable button shadow (`show_button_shadow`)
+
+### Motivation
+
+The filled-style button always had a hardcoded box-shadow. Clients need the ability to disable the shadow via the admin UI when it doesn't fit their page design.
+
+### New theme property
+
+| Property | Type | Default | Purpose |
+|----------|------|---------|---------|
+| `show_button_shadow` | boolean | `true` | Controls whether the filled-style button has a box-shadow |
+
+### Changes
+
+#### 1. Make base shadow conditional in `.start-button`
+
+```diff
+- box-shadow: 0 4px 20px rgba(0,123,255,0.3);
++ box-shadow: ${this.agentConfig.theme.show_button_shadow !== false ? '0 4px 20px rgba(0,123,255,0.3)' : 'none'};
+```
+
+#### 2. Make hover shadow conditional in `.start-button:hover:not(.loading)`
+
+```diff
+- box-shadow: 0 6px 25px rgba(0,123,255,0.4);
++ box-shadow: ${this.agentConfig.theme.show_button_shadow !== false ? '0 6px 25px rgba(0,123,255,0.4)' : 'none'};
+```
+
+#### 3. Make high-DPI shadows conditional
+
+The `@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi)` block also hardcodes shadows that override the base styles. Both must be made conditional:
+
+```diff
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      .start-button {
+-         box-shadow: 0 2px 10px rgba(0,123,255,0.3);
++         box-shadow: ${this.agentConfig.theme.show_button_shadow !== false ? '0 2px 10px rgba(0,123,255,0.3)' : 'none'};
+      }
+      .start-button:hover {
+-         box-shadow: 0 3px 15px rgba(0,123,255,0.4);
++         box-shadow: ${this.agentConfig.theme.show_button_shadow !== false ? '0 3px 15px rgba(0,123,255,0.4)' : 'none'};
+      }
+  }
+```
+
+> **Note:** The outline and soft button styles already set `box-shadow: none` and are unaffected by this setting.
+
+---
+
 ## Feature 2: Button customization options (MPR-181)
 
 ### Motivation
@@ -452,11 +522,21 @@ this._removeCCContainer();
 
 ## Validation Checklist
 
-### Bug fix (MPR-180)
+### Bug fix — button text color (MPR-180)
 - [ ] `--button-text-color` is defined in `:host` from `theme.text_color`
 - [ ] `.start-button` uses `color: var(--button-text-color)` instead of `var(--text-color)`
 - [ ] `--button-text-color` does NOT appear in the dark mode `@media` block
 - [ ] Button text color is preserved when testing in a dark-mode browser
+
+### Bug fix — modal text white-on-white
+- [ ] `--text-color` is hardcoded to `#1f2937` in `:host` (not derived from `theme.text_color`)
+- [ ] Modal agent name is readable in light mode (dark text on white background)
+- [ ] Dark mode still overrides `--text-color` to `#f9fafb`
+
+### Button shadow (`show_button_shadow`)
+- [ ] With `show_button_shadow: true` (or absent), filled button has shadow on base, hover, and high-DPI
+- [ ] With `show_button_shadow: false`, filled button has no shadow in any state (base, hover, high-DPI)
+- [ ] Outline and soft styles are unaffected (always no shadow)
 
 ### Button customization (MPR-181)
 - [ ] `button_size` with values `small`, `medium`, `large` applies correct padding/font-size/min-height
