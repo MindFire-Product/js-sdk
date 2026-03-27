@@ -25,16 +25,6 @@
 
   <script type="module">
     import './voice-chat-component-v080-dev.js';
-
-    // Force show_cc_button=true for testing (backend field not yet deployed)
-    customElements.whenDefined('voice-chat-component').then(() => {
-      const comp = document.querySelector('voice-chat-component');
-      const orig = comp._processAgentConfiguration.bind(comp);
-      comp._processAgentConfiguration = async (data) => {
-        data.show_cc_button = true;
-        return orig(data);
-      };
-    });
   </script>
 </body>
 </html>
