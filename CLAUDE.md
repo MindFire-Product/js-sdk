@@ -81,10 +81,21 @@ When releasing a new version:
 
 ## Deployment
 
-Deployed via **Firebase Hosting**. The firebase config files (`firebase.json`, `.firebaserc`) are gitignored but required locally. Deploy with:
+Deployed via **Firebase Hosting** to `https://mf-cdn.web.app`.
+
+The Firebase project is `mindfire-docs` with a deploy target named `cdn` that maps to the `mf-cdn` hosting site. This is configured in `.firebaserc` (target mapping) and `firebase.json` (hosting target + CORS headers). These config files are gitignored but required locally.
+
+Deploy with:
 
 ```bash
-firebase deploy --only hosting
+firebase deploy --only hosting:cdn
+```
+
+To verify the active project and site before deploying:
+
+```bash
+firebase use                    # Should show: mindfire-docs
+firebase hosting:sites:list     # Should show mf-cdn with URL https://mf-cdn.web.app
 ```
 
 ## Technologies
@@ -142,4 +153,40 @@ Planned and in-progress feature specs live in `specs/`. Before implementing any 
 | Spec file | Feature | Status |
 |-----------|---------|--------|
 | `specs/voice-chat-component-v070-spec.md` | Rename `visitorInfo` → `data`; add `history` property | Shipped |
-| `specs/voice-chat-component-v080-spec.md` | Dark mode button fix, button customization, closed captions | In development |
+| `specs/voice-chat-component-v080-spec.md` | Dark mode button fix, button customization, closed captions | Shipped |
+| `specs/voice-chat-component-v090-spec.md` | Configurable VAD, input transcription, noise reduction, error handling | In development |
+
+## Jira
+
+Project tracking uses **Jira Product Discovery** (not Jira Software). The only issue type available is **Idea**.
+
+| Setting | Value |
+|---------|-------|
+| Cloud ID | `90c46aca-3a17-4665-80fb-6868d68ccdfe` |
+| Project key | `MPR` (MindFire Product Roadmap) |
+| Issue type | `Idea` (the only type in this project — no Task, Bug, or Story) |
+
+**Team member account IDs** (for assignee/mentions):
+
+| Name | Account ID | Notes |
+|------|-----------|-------|
+| Manasa Pradeep | `557058:07c7403a-4897-456a-ab3b-4c8ff4e3e25b` | QA |
+| Kushal Dutta | `6002bdee1051d10075fc9fb2` | Product manager — manages QA (Manasa) and Thailand team |
+| Ramin Zamani | `5cf570f33fa1890e7f16e59f` | Product / this repo owner |
+
+**Creating Jira tickets:**
+
+```
+Tool: mcp__claude_ai_Atlassian__createJiraIssue
+  cloudId: "90c46aca-3a17-4665-80fb-6868d68ccdfe"
+  projectKey: "MPR"
+  issueTypeName: "Idea"
+  summary: "Ticket title"
+  assignee_account_id: "<account_id from table above>"
+  contentFormat: "adf"          # Use ADF for @mentions, tables, panels
+  description: <ADF JSON>       # Use {"type":"mention","attrs":{"id":"<account_id>"}} for @mentions
+```
+
+**Looking up users:** Use `mcp__claude_ai_Atlassian__lookupJiraAccountId` with `cloudId` and `searchString` (first name).
+
+**Searching issues:** Use `mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql` — note `maxResults` must be a number type, not string.
