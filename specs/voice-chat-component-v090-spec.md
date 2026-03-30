@@ -246,6 +246,62 @@ Restore the conditional in the `@media (-webkit-min-device-pixel-ratio: 2), (min
 
 ---
 
+## Bug Fix 2: CC button decoupled from primary color and `show_cc_button`
+
+### Problem
+
+The CC button had two issues:
+1. It was conditionally rendered based on `agentConfig.show_cc_button`, making it admin-configurable — inconsistent with mute and stop, which are always present as modal controls
+2. Its active state used `var(--primary-color)` as the background color. When an agent's primary color is white, the active CC button (white background + white icon) was invisible
+
+### Changes
+
+1. Remove the `show_cc_button` conditional — the CC button always renders
+2. `.cc-btn.cc-active` uses fixed `#3b82f6` (blue) instead of `var(--primary-color)`
+
+All three modal control buttons now follow the same pattern: fixed semantic colors independent of the agent's primary color.
+
+| Button | Inactive | Active |
+|--------|----------|--------|
+| Mute | Gray `#6b7280` | Amber `#f59e0b` |
+| CC | Gray `#6b7280` | Blue `#3b82f6` |
+| Stop | Red `#dc2626` | — |
+
+---
+
+## Bug Fix 3: Sound wave visibility in light and dark mode
+
+### Problem
+
+Both `--sound-wave-color` (idle) and `--sound-wave-active-color` (speaking) were tied directly to `primary_color`. Two compounding issues:
+
+1. **White/light primary in light mode**: wave bars invisible on the white modal background
+2. **Dark primary in dark mode**: wave bars invisible on the dark (`#1f2937`) modal background
+3. **Opacity compounding**: Idle bars had `opacity: 0.4`. Even a darkened wave color becomes invisible at 40% opacity on white — pure black at 0.4 opacity on white yields only ~1.6:1 contrast, below any usability threshold
+
+### Changes
+
+**Idle bars:**
+- `--sound-wave-idle-color` replaces `opacity: 0.4` + primary color
+- Fixed neutral: `#d1d5db` in light mode, `#4b5563` in dark mode
+- Set in both the JS `:host` block (at render time) and the CSS `@media (prefers-color-scheme: dark)` block (for dynamic mode changes)
+- `opacity: 0.4` removed from `.wave-bar`
+
+**Active/speaking bars:**
+- `_getWaveColor(primaryColor)` — new private method
+- Parses hex color and computes WCAG relative luminance
+- Light mode + luminance > 0.5 → blend 50% toward `#374151`
+- Dark mode + luminance < 0.15 → blend 50% toward `#e5e7eb`
+- Otherwise returns primary color unchanged
+- Falls back to original string if color cannot be parsed (named colors, CSS variables)
+
+**New private methods added:**
+- `_parseHexColor(hex)` — parses `#rrggbb` / `#rgb` to `{r, g, b}`
+- `_getLuminance(r, g, b)` — WCAG relative luminance formula
+- `_getWaveColor(primaryColor)` — returns adjusted color or original
+
+---
+
 ## Validation Checklist
 
 ### Server-configurable VAD
@@ -278,6 +334,18 @@ Restore the conditional in the `@media (-webkit-min-device-pixel-ratio: 2), (min
 ### Button shadow regression fix
 - [ ] With `show_button_shadow: true` (or absent), filled button has shadow on high-DPI displays
 - [ ] With `show_button_shadow: false`, filled button has no shadow on high-DPI displays
+
+### CC button independence
+- [ ] CC button renders regardless of `show_cc_button` value in agent config
+- [ ] CC button inactive: gray `#6b7280`
+- [ ] CC button active (CC on): blue `#3b82f6` with white icon — not tied to primary color
+- [ ] White primary color agent: CC active state is clearly visible (blue, not white)
+
+### Sound wave visibility
+- [ ] White/light primary color in light mode: idle bars visible as `#d1d5db` neutral gray
+- [ ] Normal primary color in light mode: idle bars visible, active bars use primary color
+- [ ] Dark primary color in dark mode: active bars blended lighter, idle bars visible as `#4b5563`
+- [ ] Dynamic dark/light mode switch: idle bar color updates via CSS media query
 
 ---
 

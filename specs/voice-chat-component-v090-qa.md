@@ -256,9 +256,123 @@ To test, create an HTML page that loads the v0.9.0 staging component:
 | 6 | Verify dark mode: button text color preserved | Button text stays the configured color in dark mode |
 | 7 | Verify modal text: readable in light mode | Modal text is dark gray on white, not white-on-white |
 | 8 | Test `button_size: "small"` and `button_style: "outline"` | Button renders correctly with configured size/style |
-| 9 | Enable CC (`show_cc_button: true`), toggle on, have a conversation | Closed captions work: user captions immediate, agent captions word-by-word |
+| 9 | Toggle CC on (CC button is always shown), have a conversation | Closed captions work: user captions immediate, agent captions word-by-word |
 | 10 | Listen for events: `session.created`, `output_audio_buffer.started/stopped`, `voice.conversation.ended` | All events fire with expected payloads |
 | 11 | Press Escape while modal is open | Modal closes, conversation ends |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-16: Threshold extremes
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Set threshold to 0 (or 0.05) in agent editor | Amber warning appears: "background noise may prevent the agent from detecting when you stop speaking" |
+| 2 | Start conversation and speak | Agent may not detect end of speech; relies on idle timeout (~15s) to respond |
+| 3 | Set threshold to 1.0 | Amber warning appears: "the agent may not be able to detect when the user is speaking" |
+| 4 | Start conversation and speak | Agent may not detect speech at all |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-17: Idle timeout — server_vad only enforcement
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Select semantic_vad in Detection Mode | Idle Timeout field is NOT visible (hidden for semantic_vad) |
+| 2 | Switch to server_vad | Idle Timeout field appears with min=5000, max=30000 |
+| 3 | Set idle_timeout_ms to 5000 and save | Agent auto-responds after ~5s of silence |
+| 4 | Try entering 3000 (below min) | Frontend validation rejects: "Must be between 5000 and 30000" |
+| 5 | Try entering 50000 (above max) | Frontend validation rejects: "Must be between 5000 and 30000" |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-18: Noise reduction — far_field
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Set Noise Reduction to "Far Field (laptop, speakerphone)" | Config saves with `input_audio_noise_reduction.type = "far_field"` |
+| 2 | Start conversation using laptop mic (no headphones) | Session connects, VAD detection should have fewer false positives from ambient noise compared to noise reduction off |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-19: Admin UI — VAD controls visibility and layout
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Toggle VAD on in agent editor (Advanced section) | VAD controls appear |
+| 2 | Select server_vad as Detection Mode | Shows: Threshold slider + Noise Reduction dropdown (same row), Silence Duration + Prefix Padding (same row), Idle Timeout |
+| 3 | Switch to semantic_vad | Shows: Eagerness dropdown + Noise Reduction dropdown (same row). Threshold, Silence Duration, Prefix Padding, and Idle Timeout are hidden |
+| 4 | Toggle VAD off and save | All VAD controls hidden, turn_detection saved as null |
+| 5 | Verify "Allow Interruptions" toggle is NOT present | Toggle was removed from UI (SDK limitation) |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-20: Backward compatibility — existing agents without new fields
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Load an agent created before v090 (no turn_detection, no input_audio_transcription, no input_audio_noise_reduction in DB) | Agent loads without errors in both admin UI and voice component |
+| 2 | Start conversation with this agent via the voice component | Falls back to server_vad defaults (threshold 0.5, 15s idle timeout), transcription defaults to gpt-4o-transcribe with language "en" |
+| 3 | Open agent in admin UI editor and save without changing VAD settings | No validation errors, agent saves cleanly |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-21: CC button — always visible (no show_cc_button gate)
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Use an agent where `show_cc_button` is `false` or absent in the config | Agent config loads |
+| 2 | Open the voice modal | CC button is visible alongside Mute and Stop |
+| 3 | Toggle CC on | CC works normally |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-22: CC button — active state color independent of primary color
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Use an agent with `primary_color: "#ffffff"` (white) | Agent config loads |
+| 2 | Open the voice modal | CC button shows in gray (`#6b7280`) — inactive state |
+| 3 | Click CC to activate | Button turns blue (`#3b82f6`) with white icon clearly visible — not white-on-white |
+| 4 | Verify mute and stop buttons | Also unaffected by white primary: mute is gray/amber, stop is red |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-23: Sound wave visibility — light primary color in light mode
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Use an agent with `primary_color: "#ffffff"` (white) in light mode | Agent config loads |
+| 2 | Open the voice modal | Idle wave bars are visible as light gray (`#d1d5db`) — not invisible white |
+| 3 | Start a conversation and speak | Active wave bars animate with a blended color (adjusted from white toward `#374151`) — visibly darker than white |
+| 4 | Stop speaking | Wave bars return to idle gray |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-24: Sound wave visibility — dark primary color in dark mode
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Use an agent with a very dark primary color (e.g. `#0a0a0a`) and switch OS to dark mode | Agent config loads |
+| 2 | Open the voice modal | Idle wave bars are visible as `#4b5563` (dark gray — contrasts against dark modal `#1f2937`) |
+| 3 | Start a conversation and speak | Active wave bars animate with a lightened color (blended toward `#e5e7eb`) — visible against the dark background |
 
 **Result**: Pass / Fail
 
@@ -297,3 +411,12 @@ To test, create an HTML page that loads the v0.9.0 staging component:
 | TC-13 | Button shadow — enabled (default) | Medium | |
 | TC-14 | Regression — v0.8.0 features | High | |
 | TC-15 | CDN dashboard updated | Low | |
+| TC-16 | Threshold extremes + UI warnings | Medium | |
+| TC-17 | Idle timeout — server_vad enforcement | High | |
+| TC-18 | Noise reduction — far_field | Medium | |
+| TC-19 | Admin UI — VAD controls visibility | High | |
+| TC-20 | Backward compatibility — existing agents | High | |
+| TC-21 | CC button always visible | High | |
+| TC-22 | CC button active color independent of primary | High | |
+| TC-23 | Wave visibility — light primary / light mode | High | |
+| TC-24 | Wave visibility — dark primary / dark mode | Medium | |
