@@ -95,22 +95,6 @@ Session errors now include structured JSON output (`JSON.stringify`) in the cons
 
 ## Bug Fixes
 
-### CC button decoupled from primary color and always visible
-
-The CC button previously had two related issues:
-
-1. **Gated by `show_cc_button`** — The CC button was conditionally hidden/shown via an agent config flag, making it inconsistent with Mute and Stop which are always present. The gate has been removed: the CC button now always renders as a standard modal control.
-
-2. **Active state color tied to primary color** — When CC was toggled on, the button background switched to `var(--primary-color)`. With a white primary color this produced an invisible button (white background + white icon). The active state now uses a fixed blue (`#3b82f6`) regardless of primary color, consistent with the pattern used by Mute (amber when muted) and Stop (always red).
-
-### Sound wave visibility in light and dark mode
-
-Wave bars were previously tied to `primary_color` for both idle and active states, causing them to become invisible when the primary color matched the modal background. The `opacity: 0.4` on idle bars compounded the problem — even a heavily darkened color becomes invisible at 40% opacity on white.
-
-**What changed:**
-- **Idle bars**: Use a fixed neutral color (`#d1d5db` light / `#4b5563` dark) with no opacity, always visible regardless of primary color
-- **Active/speaking bars**: A new `_getWaveColor()` method checks the WCAG relative luminance of the primary color. If the color is too light for light mode (luminance > 0.5), it blends 50% toward `#374151`. If too dark for dark mode (luminance < 0.15), it blends 50% toward `#e5e7eb`. All other colors are used as-is.
-
 ### Restored `show_button_shadow` configurability
 
 The `show_button_shadow` theme property (introduced in v0.8.0) was accidentally broken during the v0.9.0 file creation. The conditional shadow logic in the high-DPI media query was replaced with unconditional shadows, causing the button to always display a shadow regardless of the theme setting. This has been restored — setting `show_button_shadow: false` correctly removes the shadow in all states (base, hover, high-DPI).

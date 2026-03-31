@@ -11,13 +11,17 @@
 
 ## Overview
 
-Three changes are being made to the Voice Chat Component:
+Five changes are being made to the Voice Chat Component:
 
 1. **Bug fix: Button text color in dark mode** (MPR-180) — The dark mode CSS media query overrides the agent's configured text color to white, breaking button branding on dark-mode browsers. Fix by introducing an isolated CSS variable for button text.
 
 2. **Button customization options** (MPR-181) — Add `button_size` and `button_style` theme properties so clients can control how the start button fits into their landing pages. Also ensure existing theme properties (`border_radius`, `font_family`) are documented for admin UI exposure.
 
 3. **Closed captions / accessibility** (MPR-179) — Add a CC toggle button to the modal and render a YouTube-style caption bar at the bottom of the viewport. Agent captions are delayed until audio playback finishes to avoid spoiling the response.
+
+4. **Bug fix: CC active-state visibility** — The CC button active state must stay visible even when the agent primary color is white or very light. Use a fixed semantic active color instead of `primary_color`.
+
+5. **Bug fix: Sound wave visibility** — Idle and active wave bars must remain visible in both light and dark mode, even when the agent primary color is extremely light or dark.
 
 ---
 
@@ -479,7 +483,50 @@ Add to the component styles:
 }
 
 .cc-btn.cc-active {
-    background: var(--primary-color);
+    background: #3b82f6;
+    color: white;
+}
+```
+
+#### 6b. Keep wave bars visible across extreme primary colors
+
+Add three private helpers:
+
+```js
+_parseHexColor(hex) { /* parse #rgb / #rrggbb */ }
+_getLuminance(r, g, b) { /* WCAG luminance */ }
+_getWaveColor(primaryColor) { /* blend only too-light / too-dark colors */ }
+```
+
+Update the `:host` CSS variable block:
+
+```css
+--sound-wave-idle-color: ${window.matchMedia("(prefers-color-scheme: dark)").matches ? "#4b5563" : "#d1d5db"};
+--sound-wave-color: ${this._getWaveColor(this.agentConfig.theme.primary_color)};
+--sound-wave-active-color: ${this._getWaveColor(this.agentConfig.theme.primary_color)};
+```
+
+Update `.wave-bar`:
+
+```diff
+- background: var(--sound-wave-color);
++ background: var(--sound-wave-idle-color);
+  border-radius: 2px;
+  height: 2px;
+  transition: height 0.3s ease, background-color 0.3s ease;
+- opacity: 0.4;
+```
+
+Update the dark-mode block:
+
+```css
+@media (prefers-color-scheme: dark) {
+    :host {
+        --modal-bg-color: #1f2937;
+        --text-color: #f9fafb;
+        --secondary-text-color: #d1d5db;
+        --sound-wave-idle-color: #4b5563;
+    }
 }
 ```
 
@@ -549,6 +596,7 @@ this._removeCCContainer();
 ### Closed captions (MPR-179)
 - [ ] CC button only appears when `show_cc_button` is `true` in agent config
 - [ ] CC button toggles the caption bar on/off
+- [ ] CC active state uses blue `#3b82f6` with white icon/text and does not depend on `primary_color`
 - [ ] Caption bar renders at the bottom of the viewport (not inside the modal)
 - [ ] User captions appear immediately after the user speaks
 - [ ] Agent captions appear only after the agent finishes speaking (after `output_audio_buffer.stopped`)
@@ -556,6 +604,12 @@ this._removeCCContainer();
 - [ ] Caption bar is removed when conversation stops or component disconnects
 - [ ] `aria-live="polite"` is set on the caption container
 - [ ] CC button has correct `aria-pressed` state
+
+### Sound wave visibility
+- [ ] Idle wave bars use neutral gray in light mode and remain visible with very light primary colors
+- [ ] Idle wave bars use dark neutral gray in dark mode and remain visible with very dark primary colors
+- [ ] Active wave bars remain visible in both light and dark mode for extreme primary colors
+- [ ] `.wave-bar` no longer depends on reduced opacity for idle visibility
 
 ---
 

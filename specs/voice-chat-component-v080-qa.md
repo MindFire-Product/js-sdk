@@ -31,6 +31,10 @@ Two new agent theme properties control the start button appearance:
 
 A CC toggle button in the modal reveals a caption bar at the bottom of the viewport. Agent captions are revealed word-by-word at spoken pace, synced to audio playback. User captions appear immediately. Controlled by `show_cc_button` in the agent config (default `false`).
 
+### Bug Fix: CC active color and wave visibility
+
+The CC button active state is no longer tied to the agent primary color, and the sound-wave bars now remain visible for very light or very dark brand colors in both light and dark mode.
+
 ---
 
 ## Test Environment Setup
@@ -226,9 +230,21 @@ To test, create an HTML page that loads the v0.8.0 staging component:
 | # | Step | Expected Result |
 |---|------|-----------------|
 | 1 | Start a conversation with CC button visible | CC button shows with label "CC" |
-| 2 | Click the CC button | Caption bar appears at the bottom of the viewport. Button gets highlighted (active color). Label changes to "CC On". `aria-pressed` becomes `"true"` |
+| 2 | Click the CC button | Caption bar appears at the bottom of the viewport. Button turns blue (`#3b82f6`) with white icon/text, label changes to "CC On", and `aria-pressed` becomes `"true"` |
 | 3 | Click the CC button again | Caption bar disappears. Button returns to default gray. Label changes back to "CC". `aria-pressed` becomes `"false"` |
 | 4 | Toggle CC on via keyboard (Tab to button, press Enter or Space) | Same behavior as mouse click |
+
+**Result**: Pass / Fail
+
+---
+
+### TC-10b: CC active state visible with light primary color
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Use an agent with `primary_color: "#ffffff"` or another very light color | Agent config loads |
+| 2 | Open the voice modal and enable CC | CC button turns blue (`#3b82f6`) with white icon/text and remains clearly visible |
+| 3 | Disable CC | Button returns to default gray inactive state |
 
 **Result**: Pass / Fail
 
@@ -343,6 +359,19 @@ To test, create an HTML page that loads the v0.8.0 staging component:
 
 ---
 
+### TC-19b: Sound wave visibility with extreme primary colors
+
+| # | Step | Expected Result |
+|---|------|-----------------|
+| 1 | Use an agent with `primary_color: "#ffffff"` in light mode | Idle wave bars are visible as neutral gray, not invisible white |
+| 2 | Start a conversation | Active bars remain visible and appear darker than pure white |
+| 3 | Use an agent with a very dark primary color (for example `#0a0a0a`) in dark mode | Idle bars are visible against the dark modal |
+| 4 | Start a conversation in dark mode | Active bars remain visible and appear lighter than the raw dark primary |
+
+**Result**: Pass / Fail
+
+---
+
 ### TC-20: Regression — v0.7.0 features still work
 
 | # | Step | Expected Result |
@@ -390,6 +419,7 @@ To test, create an HTML page that loads the v0.8.0 staging component:
 | TC-8 | Button size + style combinations | Medium | |
 | TC-9 | CC button visibility | High | |
 | TC-10 | CC toggle on/off | High | |
+| TC-10b | CC active state visible with light primary color | Medium | |
 | TC-11 | CC caption bar appearance | Medium | |
 | TC-12 | User captions — immediate | High | |
 | TC-13 | Agent captions — word-by-word reveal | High | |
@@ -399,5 +429,6 @@ To test, create an HTML page that loads the v0.8.0 staging component:
 | TC-17 | CC cleanup on stop | High | |
 | TC-18 | CC cleanup on ESC | Medium | |
 | TC-19 | CC punctuation spacing | Low | |
+| TC-19b | Sound wave visibility with extreme primary colors | High | |
 | TC-20 | Regression — v0.7.0 features | High | |
 | TC-21 | CDN dashboard updated | Low | |

@@ -486,6 +486,64 @@ class VoiceChatComponent extends HTMLElement {
     console.log("Component shown - agent is active");
   }
 
+  /**
+   * Parse a hex color string into {r, g, b} components.
+   * Returns null if the format is unrecognised.
+   * @private
+   */
+  _parseHexColor(hex) {
+    hex = hex.trim().replace("#", "");
+    if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+    if (hex.length !== 6) return null;
+    return {
+      r: parseInt(hex.slice(0, 2), 16),
+      g: parseInt(hex.slice(2, 4), 16),
+      b: parseInt(hex.slice(4, 6), 16),
+    };
+  }
+
+  /**
+   * Compute relative luminance (WCAG formula) from linear RGB components.
+   * @private
+   */
+  _getLuminance(r, g, b) {
+    return [r, g, b]
+      .map((c) => {
+        c /= 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      })
+      .reduce((acc, c, i) => acc + c * [0.2126, 0.7152, 0.0722][i], 0);
+  }
+
+  /**
+   * Return a wave color that is guaranteed to be visible against the modal
+   * background in both light and dark mode.
+   * @private
+   */
+  _getWaveColor(primaryColor) {
+    const rgb = this._parseHexColor(primaryColor);
+    if (!rgb) return primaryColor;
+
+    const luminance = this._getLuminance(rgb.r, rgb.g, rgb.b);
+    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    const blend = (base, target, t) => ({
+      r: Math.round(base.r * (1 - t) + target.r * t),
+      g: Math.round(base.g * (1 - t) + target.g * t),
+      b: Math.round(base.b * (1 - t) + target.b * t),
+    });
+    const toRgb = ({ r, g, b }) => `rgb(${r}, ${g}, ${b})`;
+
+    if (!isDark && luminance > 0.5) {
+      return toRgb(blend(rgb, { r: 55, g: 65, b: 81 }, 0.5));
+    }
+    if (isDark && luminance < 0.15) {
+      return toRgb(blend(rgb, { r: 229, g: 231, b: 235 }, 0.5));
+    }
+
+    return primaryColor;
+  }
+
   render() {
     // Show loading spinner if no agent config is loaded
     if (!this.agentConfig) {
@@ -559,10 +617,9 @@ class VoiceChatComponent extends HTMLElement {
                       --modal-bg-color: #ffffff;
                       --border-radius: ${this.agentConfig.theme.border_radius};
                       --font-family: ${this.agentConfig.theme.font_family};
-                      --sound-wave-color: ${this.agentConfig.theme.primary_color
-      };
-                      --sound-wave-active-color: ${this.agentConfig.theme.primary_color
-      };
+                      --sound-wave-idle-color: ${window.matchMedia("(prefers-color-scheme: dark)").matches ? "#4b5563" : "#d1d5db"};
+                      --sound-wave-color: ${this._getWaveColor(this.agentConfig.theme.primary_color)};
+                      --sound-wave-active-color: ${this._getWaveColor(this.agentConfig.theme.primary_color)};
                       --button-text-color: ${this.agentConfig.theme.text_color};
                   }
                   
@@ -803,11 +860,10 @@ class VoiceChatComponent extends HTMLElement {
                   
                   .wave-bar {
                       width: 4px;
-                      background: var(--sound-wave-color);
+                      background: var(--sound-wave-idle-color);
                       border-radius: 2px;
                       height: 2px;
                       transition: height 0.3s ease, background-color 0.3s ease;
-                      opacity: 0.4;
                   }
                   
                   .sound-wave.active .wave-bar {
@@ -901,7 +957,8 @@ class VoiceChatComponent extends HTMLElement {
                   }
 
                   .cc-btn.cc-active {
-                      background: var(--primary-color);
+                      background: #3b82f6;
+                      color: white;
                   }
 
                   .control-label {
@@ -1070,6 +1127,7 @@ class VoiceChatComponent extends HTMLElement {
                           --modal-bg-color: #1f2937;
                           --text-color: #f9fafb;
                           --secondary-text-color: #d1d5db;
+                          --sound-wave-idle-color: #4b5563;
                       }
                   }
               </style>

@@ -328,56 +328,6 @@ To test, create an HTML page that loads the v0.9.0 staging component:
 
 ---
 
-### TC-21: CC button — always visible (no show_cc_button gate)
-
-| # | Step | Expected Result |
-|---|------|-----------------|
-| 1 | Use an agent where `show_cc_button` is `false` or absent in the config | Agent config loads |
-| 2 | Open the voice modal | CC button is visible alongside Mute and Stop |
-| 3 | Toggle CC on | CC works normally |
-
-**Result**: Pass / Fail
-
----
-
-### TC-22: CC button — active state color independent of primary color
-
-| # | Step | Expected Result |
-|---|------|-----------------|
-| 1 | Use an agent with `primary_color: "#ffffff"` (white) | Agent config loads |
-| 2 | Open the voice modal | CC button shows in gray (`#6b7280`) — inactive state |
-| 3 | Click CC to activate | Button turns blue (`#3b82f6`) with white icon clearly visible — not white-on-white |
-| 4 | Verify mute and stop buttons | Also unaffected by white primary: mute is gray/amber, stop is red |
-
-**Result**: Pass / Fail
-
----
-
-### TC-23: Sound wave visibility — light primary color in light mode
-
-| # | Step | Expected Result |
-|---|------|-----------------|
-| 1 | Use an agent with `primary_color: "#ffffff"` (white) in light mode | Agent config loads |
-| 2 | Open the voice modal | Idle wave bars are visible as light gray (`#d1d5db`) — not invisible white |
-| 3 | Start a conversation and speak | Active wave bars animate with a blended color (adjusted from white toward `#374151`) — visibly darker than white |
-| 4 | Stop speaking | Wave bars return to idle gray |
-
-**Result**: Pass / Fail
-
----
-
-### TC-24: Sound wave visibility — dark primary color in dark mode
-
-| # | Step | Expected Result |
-|---|------|-----------------|
-| 1 | Use an agent with a very dark primary color (e.g. `#0a0a0a`) and switch OS to dark mode | Agent config loads |
-| 2 | Open the voice modal | Idle wave bars are visible as `#4b5563` (dark gray — contrasts against dark modal `#1f2937`) |
-| 3 | Start a conversation and speak | Active wave bars animate with a lightened color (blended toward `#e5e7eb`) — visible against the dark background |
-
-**Result**: Pass / Fail
-
----
-
 ### TC-15: CDN dashboard updated
 
 | # | Step | Expected Result |
@@ -416,7 +366,3 @@ To test, create an HTML page that loads the v0.9.0 staging component:
 | TC-18 | Noise reduction — far_field | Medium | |
 | TC-19 | Admin UI — VAD controls visibility | High | |
 | TC-20 | Backward compatibility — existing agents | High | |
-| TC-21 | CC button always visible | High | |
-| TC-22 | CC button active color independent of primary | High | |
-| TC-23 | Wave visibility — light primary / light mode | High | |
-| TC-24 | Wave visibility — dark primary / dark mode | Medium | |

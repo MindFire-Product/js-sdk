@@ -15,6 +15,19 @@ The dark mode CSS media query was overriding the agent's configured text color o
 
 The `--text-color` CSS variable (used for the modal agent name and status text) was set to the agent's configured button text color (e.g. `#ffffff`), causing white text on a white modal background. This is now hardcoded to a dark gray (`#1f2937`) for light mode. Dark mode continues to override it to white as expected.
 
+### CC button active-state color
+
+The CC button's active state previously used `var(--primary-color)` as its background. For agents with a white or very light primary color, toggling CC on could make the button effectively disappear. The active state now uses a fixed blue (`#3b82f6`) with a white icon, so the enabled state remains visible regardless of brand color.
+
+### Sound wave visibility in light and dark mode
+
+Wave bars were previously tied directly to `primary_color`, which could make them disappear against the modal background. This was especially noticeable with white/light primaries in light mode and very dark primaries in dark mode.
+
+**What changed:**
+- **Idle bars** now use a neutral color instead of a faded primary color: `#d1d5db` in light mode and `#4b5563` in dark mode
+- **Active bars** now pass through `_getWaveColor()`, which adjusts only extreme light/dark colors so the speaking state stays visible against the modal background
+- The old idle-bar `opacity: 0.4` was removed to avoid washing out the bars
+
 ---
 
 ## New Features
@@ -61,6 +74,10 @@ A new CC toggle button in the conversation modal lets users view real-time capti
 - Caption container has `role="log"` and `aria-live="polite"` for screen readers
 - CC button has `aria-pressed` state and `aria-label`
 - All keyboard-accessible via Enter/Space
+
+**Visual behavior:**
+- CC active state uses a fixed accessible blue instead of the agent primary color
+- Idle and active wave bars remain visible even when the agent primary color is very light or very dark
 
 **Configuration:**
 - `show_cc_button` (boolean, default `false`) — set in agent config on the server. When `false` or absent, the CC button is not rendered at all
