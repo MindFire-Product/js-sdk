@@ -1215,6 +1215,7 @@ class VoiceChatComponent extends HTMLElement {
   
                       <!-- Control Buttons -->
                       <div class="controls" role="toolbar" aria-label="Voice conversation controls">
+                          ${this.agentConfig.show_cc_button ? `
                           <div class="control-item">
                               <button
                                   class="control-btn cc-btn"
@@ -1232,6 +1233,7 @@ class VoiceChatComponent extends HTMLElement {
                               </button>
                               <span class="control-label" id="cc-btn-label">CC</span>
                           </div>
+                          ` : ""}
                           <div class="control-item">
                               <button
                                   class="control-btn mute-btn"
