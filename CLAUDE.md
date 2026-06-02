@@ -61,11 +61,20 @@ A Web Component (`<voice-chat-component>`) that embeds an AI voice conversation 
 - `output_audio_buffer.started` / `stopped`
 - `response.output_audio_transcript.done`
 - `conversation.item.input_audio_transcription.completed`
+- `voice.consent.accepted`
 - `voice.conversation.ended`
 - `guardrail_tripped`
 - `error`
 
 **Agent config endpoint**: `GET https://z-server-stg.uc.r.appspot.com/api/v1/agents/{accountId}/{agentId}`
+
+**v100 SDK/version behavior**:
+- v100 sends `sdk_version=v100` on Realtime token requests.
+- v090 and older SDKs do not send `sdk_version`; the backend treats them as legacy.
+- v100 reads `realtime_model` from the public agent config and passes it into the browser `RealtimeSession`.
+- When consent is enabled, v100 emits `voice.consent.accepted` every time the visitor clicks **Agree**. Consent is not remembered by the SDK and is not persisted to the MindFire backend.
+- Downstream event persistence SDKs should listen for `voice.consent.accepted` and persist it in their own event store.
+- `voice.consent.accepted.detail` includes: `account_id`, `agent_id`, `sdk_version`, `consent_enabled`, `consent_message`, `accepted_at`, and `page_url`.
 
 ## Versioning Convention
 
@@ -155,6 +164,7 @@ Planned and in-progress feature specs live in `specs/`. Before implementing any 
 | `specs/voice-chat-component-v070-spec.md` | Rename `visitorInfo` → `data`; add `history` property | Shipped |
 | `specs/voice-chat-component-v080-spec.md` | Dark mode button fix, button customization, closed captions | Shipped |
 | `specs/voice-chat-component-v090-spec.md` | Configurable VAD, input transcription, noise reduction, error handling | In development |
+| `specs/voice-chat-component-v100-spec.md` | Consent prompt, consent event, SDK-version model compatibility, muted banner | In development |
 
 ## Jira
 
