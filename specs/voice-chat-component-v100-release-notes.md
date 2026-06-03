@@ -42,7 +42,7 @@ Downstream event persistence SDKs should persist this event in their own event s
 
 ### Backend-Controlled Realtime Model Path
 
-v1.0.0 sends `sdk_version=v100` when requesting the ephemeral Realtime token. The backend uses this value to keep older SDKs on the legacy realtime model while allowing v100 to use the backend-configured `realtime_model` returned by the public agent config.
+v1.0.0 sends `sdk_version=v100` when requesting the ephemeral Realtime token. The backend uses this value to keep older SDKs on the legacy realtime model while allowing v100 to use the backend-configured `realtime_model` and `realtime_reasoning_effort` returned by the public agent config.
 
 This keeps model selection aligned between the backend-created ephemeral session and the browser-created Realtime session.
 
@@ -56,17 +56,7 @@ The in-session modal now shows a clear muted-state banner when the visitor is mu
 
 - v090 and older SDKs do not send `sdk_version`; backend token requests treat them as legacy.
 - v100 sends `sdk_version=v100`; backend token requests use the current configured realtime model.
-- v100 reads `realtime_model` from the public agent config and passes it into `RealtimeSession`.
+- v100 reads `realtime_model` and `realtime_reasoning_effort` from the public agent config and passes them into `RealtimeSession`.
+- The backend only sends Realtime reasoning effort for reasoning-capable realtime model paths. The current release default is `low`.
 - Existing Realtime event names are still forwarded unchanged.
 - `voice.consent.accepted` is additive and should not break existing listeners.
-
----
-
-## Staging Validation
-
-- Use `https://mf-cdn.web.app/voice-chat-component-v100-stg.js`.
-- Confirm the staged file points to `https://z-server-stg.uc.r.appspot.com/api`.
-- Confirm consent prompt appears before microphone permission.
-- Confirm `voice.consent.accepted` fires every time the visitor clicks **Agree**.
-- Confirm no consent state is persisted in browser storage.
-- Confirm live conversation still connects and emits existing transcript/session events.

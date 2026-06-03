@@ -29,13 +29,16 @@ The backend uses this value for backward-compatible model selection:
 | v090 and older | No `sdk_version` query param | Legacy realtime model |
 | v100 and newer | `sdk_version=v100` | Current backend-configured realtime model |
 
-The public agent config also returns `realtime_model`. v100 passes that value into the browser `RealtimeSession`:
+The public agent config also returns `realtime_model` and, when applicable, `realtime_reasoning_effort`. v100 passes those values into the browser `RealtimeSession`:
 
 ```javascript
 model: this.agentConfig.realtime_model || "gpt-realtime-2"
+config: {
+  reasoning: { effort: this.agentConfig.realtime_reasoning_effort }
+}
 ```
 
-This keeps the backend-minted ephemeral session and browser-created Realtime session aligned.
+The backend omits reasoning effort for legacy realtime models. This keeps the backend-minted ephemeral session and browser-created Realtime session aligned without sending unsupported reasoning config to older model paths.
 
 ---
 

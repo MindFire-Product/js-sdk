@@ -92,7 +92,7 @@ import {
  * @note v100 sends sdk_version=v100 when requesting the ephemeral Realtime token.
  * The backend uses sdk_version for backward-compatible model selection: older SDKs
  * that do not send sdk_version remain on the legacy realtime model, while v100 uses
- * the realtime_model returned by the public agent config.
+ * the realtime_model and realtime_reasoning_effort returned by the public agent config.
  *
  * @note If consent is enabled for the agent, v100 prompts on every new voice session.
  * Consent is not remembered in browser storage. Each explicit Agree click emits
@@ -2178,15 +2178,22 @@ class VoiceChatComponent extends HTMLElement {
         audioInput.noiseReduction = { type: noiseReduction.type };
       }
 
-        this.session = new RealtimeSession(this.agent, {
-          model: this.agentConfig.realtime_model || "gpt-realtime-2",
-          outputGuardrails: guardrails,
-          tracingDisabled: false,
-        config: {
-          audio: {
-            input: audioInput,
-          }
-        }
+      const sessionConfig = {
+        audio: {
+          input: audioInput,
+        },
+      };
+      if (this.agentConfig.realtime_reasoning_effort) {
+        sessionConfig.reasoning = {
+          effort: this.agentConfig.realtime_reasoning_effort,
+        };
+      }
+
+      this.session = new RealtimeSession(this.agent, {
+        model: this.agentConfig.realtime_model || "gpt-realtime-2",
+        outputGuardrails: guardrails,
+        tracingDisabled: false,
+        config: sessionConfig,
       });
 
       // Setup event handlers
