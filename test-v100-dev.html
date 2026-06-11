@@ -30,6 +30,9 @@
     voiceComponent?.addEventListener('voice.consent.accepted', (event) => {
       console.log('voice.consent.accepted', event.detail);
     });
+    voiceComponent?.addEventListener('voice.consent.declined', (event) => {
+      console.log('voice.consent.declined', event.detail);
+    });
   </script>
 </body>
 </html>

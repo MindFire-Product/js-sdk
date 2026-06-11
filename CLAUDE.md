@@ -62,6 +62,7 @@ A Web Component (`<voice-chat-component>`) that embeds an AI voice conversation 
 - `response.output_audio_transcript.done`
 - `conversation.item.input_audio_transcription.completed`
 - `voice.consent.accepted`
+- `voice.consent.declined`
 - `voice.conversation.ended`
 - `guardrail_tripped`
 - `error`
@@ -73,9 +74,10 @@ A Web Component (`<voice-chat-component>`) that embeds an AI voice conversation 
 - v090 and older SDKs do not send `sdk_version`; the backend treats them as legacy.
 - v100 reads `realtime_model` and `realtime_reasoning_effort` from the public agent config and passes them into the browser `RealtimeSession`.
 - The backend only exposes/sends Realtime reasoning effort for reasoning-capable realtime model paths. The current release default is `low`.
-- When consent is enabled, v100 emits `voice.consent.accepted` every time the visitor clicks **Agree**. Consent is not remembered by the SDK and is not persisted to the MindFire backend.
-- Downstream event persistence SDKs should listen for `voice.consent.accepted` and persist it in their own event store.
+- When consent is enabled, v100 emits `voice.consent.accepted` every time the visitor clicks **Agree** and `voice.consent.declined` when the visitor clicks **Cancel** or presses **Escape**. Consent is not remembered by the SDK and is not persisted to the MindFire backend.
+- Downstream event persistence SDKs should listen for `voice.consent.accepted` and `voice.consent.declined` and persist them in their own event store.
 - `voice.consent.accepted.detail` includes: `account_id`, `agent_id`, `sdk_version`, `consent_enabled`, `consent_message`, `accepted_at`, and `page_url`.
+- `voice.consent.declined.detail` includes: `account_id`, `agent_id`, `sdk_version`, `consent_enabled`, `consent_message`, `declined_at`, and `page_url`.
 
 ## Versioning Convention
 

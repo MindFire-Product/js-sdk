@@ -14,17 +14,21 @@ Agents can now require a visitor consent prompt before a voice chat session star
 
 Consent is requested every time a new voice session starts. The SDK does not remember consent in browser storage and does not persist consent to the MindFire backend.
 
-### Consent Acceptance Event
+### Consent Events
 
-v1.0.0 adds a new DOM custom event:
+v1.0.0 adds DOM custom events for consent decisions:
 
 ```javascript
 voiceComponent.addEventListener("voice.consent.accepted", (event) => {
   console.log(event.detail);
 });
+
+voiceComponent.addEventListener("voice.consent.declined", (event) => {
+  console.log(event.detail);
+});
 ```
 
-Payload:
+Accepted payload:
 
 ```json
 {
@@ -38,7 +42,21 @@ Payload:
 }
 ```
 
-Downstream event persistence SDKs should persist this event in their own event store and add their own receipt timestamp.
+Declined payload:
+
+```json
+{
+  "account_id": "36038",
+  "agent_id": "6939b1f2fa486d985bff76ae",
+  "sdk_version": "v100",
+  "consent_enabled": true,
+  "consent_message": "By selecting Agree...",
+  "declined_at": "2026-06-02T18:30:00.000Z",
+  "page_url": "https://example.com/page"
+}
+```
+
+Downstream event persistence SDKs should persist these events in their own event store and add their own receipt timestamp.
 
 ### Backend-Controlled Realtime Model Path
 
@@ -60,3 +78,4 @@ The in-session modal now shows a clear muted-state banner when the visitor is mu
 - The backend only sends Realtime reasoning effort for reasoning-capable realtime model paths. The current release default is `low`.
 - Existing Realtime event names are still forwarded unchanged.
 - `voice.consent.accepted` is additive and should not break existing listeners.
+- `voice.consent.declined` is additive and should not break existing listeners.

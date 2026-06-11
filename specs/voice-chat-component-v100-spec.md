@@ -10,7 +10,7 @@
 
 v1.0.0 adds consent handling, SDK-version-aware Realtime token requests, backend-controlled Realtime model selection, and mute-state UX improvements.
 
-This version intentionally keeps the existing DOM event stream compatible with older integrations and adds one new custom event for consent acceptance.
+This version intentionally keeps the existing DOM event stream compatible with older integrations and adds custom events for consent acceptance and decline.
 
 ---
 
@@ -59,14 +59,15 @@ Key behavior:
 
 - Consent is requested every time the visitor starts a new voice session.
 - Consent is not remembered in `localStorage`, `sessionStorage`, cookies, or the MindFire backend.
-- Selecting **Cancel** closes the consent prompt and does not start a session.
+- Selecting **Cancel** or pressing **Escape** emits `voice.consent.declined`, closes the consent prompt, and does not start a session.
 - Selecting **Agree** emits `voice.consent.accepted`, then proceeds with session startup.
 
 ---
 
-## New Event: `voice.consent.accepted`
+## New Events: `voice.consent.accepted` and `voice.consent.declined`
 
 The Web Component emits this DOM `CustomEvent` every time the visitor explicitly clicks **Agree** in the consent prompt.
+It emits `voice.consent.declined` when the visitor clicks **Cancel** or presses **Escape** while the consent prompt is open.
 
 Example:
 
@@ -76,9 +77,13 @@ const voiceComponent = document.querySelector("voice-chat-component");
 voiceComponent.addEventListener("voice.consent.accepted", (event) => {
   console.log(event.detail);
 });
+
+voiceComponent.addEventListener("voice.consent.declined", (event) => {
+  console.log(event.detail);
+});
 ```
 
-Payload:
+Accepted payload:
 
 ```json
 {
@@ -92,7 +97,21 @@ Payload:
 }
 ```
 
-Downstream event persistence SDKs should listen for this event and persist it in their own event store. They should also add their own server-side or ingestion-side receipt timestamp, because `accepted_at` comes from the visitor's browser clock.
+Declined payload:
+
+```json
+{
+  "account_id": "36038",
+  "agent_id": "6939b1f2fa486d985bff76ae",
+  "sdk_version": "v100",
+  "consent_enabled": true,
+  "consent_message": "By selecting Agree...",
+  "declined_at": "2026-06-02T18:30:00.000Z",
+  "page_url": "https://example.com/page"
+}
+```
+
+Downstream event persistence SDKs should listen for these events and persist them in their own event store. They should also add their own server-side or ingestion-side receipt timestamp, because `accepted_at` and `declined_at` come from the visitor's browser clock.
 
 ---
 
@@ -106,9 +125,10 @@ Existing custom events remain:
 - `guardrail_tripped`
 - `error`
 
-New custom event:
+New custom events:
 
 - `voice.consent.accepted`
+- `voice.consent.declined`
 
 ---
 
@@ -129,6 +149,7 @@ The modal now shows a prominent muted-state banner when the visitor is muted.
 - [ ] Consent prompt appears again for each new session.
 - [ ] Clicking **Agree** emits `voice.consent.accepted` before the session starts.
 - [ ] `voice.consent.accepted.detail` includes account ID, agent ID, SDK version, consent message, browser timestamp, and page URL.
-- [ ] Clicking **Cancel** does not request microphone permission or start a session.
+- [ ] Clicking **Cancel** or pressing **Escape** emits `voice.consent.declined` and does not request microphone permission or start a session.
+- [ ] `voice.consent.declined.detail` includes account ID, agent ID, SDK version, consent message, browser timestamp, and page URL.
 - [ ] Existing event listeners for Realtime events still receive original event names.
 - [ ] v090 staging/production assets remain available and unchanged.

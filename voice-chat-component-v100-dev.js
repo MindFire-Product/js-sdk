@@ -70,6 +70,14 @@ import {
  *   // }
  * });
  *
+ * voiceComponent.addEventListener('voice.consent.declined', (event) => {
+ *   console.log('Consent declined:', event.detail);
+ *   // detail: {
+ *   //   account_id, agent_id, sdk_version, consent_enabled,
+ *   //   consent_message, declined_at, page_url
+ *   // }
+ * });
+ *
  * voiceComponent.addEventListener('guardrail_tripped', (event) => {
  *   console.log('Guardrail triggered:', event.detail);
  * });
@@ -85,6 +93,7 @@ import {
  * @event response.output_audio_transcript.done - Agent speech transcribed
  * @event conversation.item.input_audio_transcription.completed - User speech transcribed
  * @event voice.consent.accepted - User accepted the configured consent prompt
+ * @event voice.consent.declined - User declined the configured consent prompt
  * @event voice.conversation.ended - Summary event fired when the conversation finishes (custom event)
  * @event guardrail_tripped - Fired when an output guardrail is triggered
  * @event error - Session error occurred
@@ -96,7 +105,8 @@ import {
  *
  * @note If consent is enabled for the agent, v100 prompts on every new voice session.
  * Consent is not remembered in browser storage. Each explicit Agree click emits
- * voice.consent.accepted for downstream event persistence.
+ * voice.consent.accepted, and each Cancel or Escape dismissal emits
+ * voice.consent.declined for downstream event persistence.
  */
 class VoiceChatComponent extends HTMLElement {
   constructor() {
@@ -594,14 +604,28 @@ class VoiceChatComponent extends HTMLElement {
     );
   }
 
-  _emitConsentAccepted() {
-    this._emit("voice.consent.accepted", {
+  _buildConsentEventDetail() {
+    return {
       account_id: this.accountId,
       agent_id: this.agentId,
       sdk_version: this.sdkVersion,
       consent_enabled: true,
       consent_message: this.agentConfig?.consent_message?.trim() || "",
+    };
+  }
+
+  _emitConsentAccepted() {
+    this._emit("voice.consent.accepted", {
+      ...this._buildConsentEventDetail(),
       accepted_at: new Date().toISOString(),
+      page_url: window.location.href,
+    });
+  }
+
+  _emitConsentDeclined() {
+    this._emit("voice.consent.declined", {
+      ...this._buildConsentEventDetail(),
+      declined_at: new Date().toISOString(),
       page_url: window.location.href,
     });
   }
@@ -630,6 +654,10 @@ class VoiceChatComponent extends HTMLElement {
   }
 
   _cancelConsent() {
+    const consentOverlay = this.shadowRoot?.querySelector("#consent-overlay");
+    if (consentOverlay?.classList.contains("show")) {
+      this._emitConsentDeclined();
+    }
     this._hideConsentModal();
   }
 
